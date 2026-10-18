@@ -2,8 +2,17 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { slugError } from "@/lib/slug";
 
 const fail = (msg: string): never => redirect("/login?error=" + encodeURIComponent(msg));
+const failSignup = (msg: string): never => redirect("/registro?error=" + encodeURIComponent(msg));
+
+export async function checkSlug(slug: string): Promise<boolean> {
+  if (slugError(slug)) return false;
+  const supabase = await createClient();
+  const { data } = await supabase.from("businesses").select("id").eq("slug", slug).maybeSingle();
+  return !data;
+}
 
 export async function signIn(formData: FormData) {
   const supabase = await createClient();
@@ -19,9 +28,11 @@ export async function signUp(formData: FormData) {
   const name = String(formData.get("business_name") ?? "").trim();
   const slug = String(formData.get("business_slug") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
-  if (name.length < 2) fail("Indica el nombre del negocio");
-  if (!/^[a-z0-9-]{3,40}$/.test(slug)) fail("El enlace solo admite minúsculas, números y guiones (3-40)");
-  if (password.length < 8) fail("La contraseña debe tener al menos 8 caracteres");
+  if (name.length < 2) failSignup("Indica el nombre del negocio");
+  const slugErr = slugError(slug);
+  if (slugErr) failSignup(slugErr);
+  if (password.length < 8) failSignup("La contraseña debe tener al menos 8 caracteres");
+  if (!(await checkSlug(slug))) failSignup("Esa dirección ya está en uso. Elige otra.");
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
@@ -29,9 +40,9 @@ export async function signUp(formData: FormData) {
     password,
     options: { data: { business_name: name, business_slug: slug } },
   });
-  if (error) fail(error.message);
+  if (error) failSignup(error.message);
   // Sin sesión = confirmación por email pendiente; el negocio se crea en el primer acceso
-  if (!data.session) fail("Revisa tu email para confirmar la cuenta y luego inicia sesión");
+  if (!data.session) redirect("/login?info=" + encodeURIComponent("Cuenta creada. Revisa tu email para confirmarla y luego inicia sesión."));
   redirect("/dashboard/agenda");
 }
 

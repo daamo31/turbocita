@@ -33,11 +33,11 @@ export async function proxy(request: NextRequest) {
   if (slug) {
     // En el dominio de una tienda solo se sirve su página de reservas
     if (pathname === "/") return NextResponse.rewrite(new URL(`/reservar/${slug}`, request.url));
-    if (pathname.startsWith("/dashboard") || pathname === "/login") return new NextResponse("Not found", { status: 404 });
+    if (pathname.startsWith("/dashboard") || pathname === "/login" || pathname === "/registro") return new NextResponse("Not found", { status: 404 });
     return NextResponse.next();
   }
 
-  if (!pathname.startsWith("/dashboard") && pathname !== "/login") return NextResponse.next();
+  if (!pathname.startsWith("/dashboard") && pathname !== "/login" && pathname !== "/registro") return NextResponse.next();
 
   let response = NextResponse.next({ request });
 
@@ -63,7 +63,7 @@ export async function proxy(request: NextRequest) {
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
-  if (user && pathname === "/login") {
+  if (user && (pathname === "/login" || pathname === "/registro")) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard/agenda";
     return NextResponse.redirect(url);
