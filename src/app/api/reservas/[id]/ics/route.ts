@@ -1,7 +1,22 @@
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-const esc = (s: string) => s.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+const esc = (s: string) =>
+  s.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r\n|\r|\n/g, "\\n")
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "");
+// RFC 5545: líneas de máx. 75 octetos, continuación con CRLF + espacio
+const fold = (line: string) => {
+  const out: string[] = [];
+  let cur = "", bytes = 0;
+  for (const ch of line) {
+    const n = Buffer.byteLength(ch);
+    if (bytes + n > (out.length ? 74 : 75)) { out.push(cur); cur = ""; bytes = 0; }
+    cur += ch; bytes += n;
+  }
+  out.push(cur);
+  return out.join("\r\n ");
+};
 const stamp = (iso: string) => new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
 
 // Evento .ics para añadir la reserva al calendario/wallet del móvil. El token de cancelación actúa como secreto.
@@ -48,7 +63,7 @@ export async function GET(req: Request, ctx: RouteContext<"/api/reservas/[id]/ic
     "END:VCALENDAR",
   ];
 
-  return new Response(lines.join("\r\n") + "\r\n", {
+  return new Response(lines.map(fold).join("\r\n") + "\r\n", {
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",
       "Content-Disposition": `attachment; filename="reserva-${a.id.slice(0, 8)}.ics"`,

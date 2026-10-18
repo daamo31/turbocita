@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getContext } from "@/lib/auth";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { THEME_KEYS, LAYOUT_KEYS, CARD_STYLES, PATTERNS } from "@/lib/themes";
 
 const schema = z.object({
@@ -70,7 +71,8 @@ export async function uploadLogo(_prev: FormResult, formData: FormData): Promise
   if (stale.length) await supabase.storage.from("logos").remove(stale);
 
   const { data } = supabase.storage.from("logos").getPublicUrl(path);
-  await supabase.from("businesses").update({ logo_url: data.publicUrl }).eq("id", business.id);
+  // logo_url y custom_domain no son editables vía API por el usuario: se escriben con service_role tras comprobar que es el dueño
+  await createAdminClient().from("businesses").update({ logo_url: data.publicUrl }).eq("id", business.id);
   revalidatePath("/dashboard/apariencia");
   revalidatePath(`/reservar/${business.slug}`);
   return { ok: true, message: "Logo actualizado." };
@@ -81,7 +83,7 @@ export async function removeLogo() {
   if (role !== "owner") return;
   const { data: old } = await supabase.storage.from("logos").list(business.id);
   if (old?.length) await supabase.storage.from("logos").remove(old.map((o) => `${business.id}/${o.name}`));
-  await supabase.from("businesses").update({ logo_url: null }).eq("id", business.id);
+  await createAdminClient().from("businesses").update({ logo_url: null }).eq("id", business.id);
   revalidatePath("/dashboard/apariencia");
   revalidatePath(`/reservar/${business.slug}`);
 }
@@ -129,15 +131,17 @@ export async function saveDomain(_prev: FormResult, formData: FormData): Promise
 
   if (!domain) {
     if (current?.custom_domain) await vercelDomain("DELETE", current.custom_domain);
-    await supabase.from("businesses").update({ custom_domain: null }).eq("id", business.id);
+    await createAdminClient().from("businesses").update({ custom_domain: null }).eq("id", business.id);
     revalidatePath("/dashboard/apariencia");
     return { ok: true, message: "Dominio eliminado." };
   }
   if (!domainRe.test(domain)) return { ok: false, message: "Dominio no válido (ej. reservas.mipeluqueria.com)." };
   if (root && (domain === root || domain.endsWith(`.${root}`)))
     return { ok: false, message: "Ese dominio pertenece a la plataforma." };
+  if (/\.(vercel\.app|supabase\.co|supabase\.in)$/.test(domain))
+    return { ok: false, message: "Ese dominio pertenece a un tercero." };
 
-  const { error } = await supabase.from("businesses").update({ custom_domain: domain }).eq("id", business.id);
+  const { error } = await createAdminClient().from("businesses").update({ custom_domain: domain }).eq("id", business.id);
   if (error) return { ok: false, message: "Ese dominio ya está en uso." };
 
   if (current?.custom_domain && current.custom_domain !== domain) await vercelDomain("DELETE", current.custom_domain);

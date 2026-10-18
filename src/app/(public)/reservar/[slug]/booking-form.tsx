@@ -1,5 +1,6 @@
 "use client";
 
+import Script from "next/script";
 import { useActionState, useEffect, useMemo, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -278,6 +279,12 @@ export function BookingForm({
           <div className="space-y-1"><Label htmlFor="email">Email (opcional)</Label><Input id="email" name="email" type="email" autoComplete="email" className="h-11" /></div>
           <div className="space-y-1"><Label htmlFor="notes">Notas (opcional)</Label><Textarea id="notes" name="notes" maxLength={500} /></div>
         </div>
+        {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
+          <>
+            <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="lazyOnload" />
+            <div className="cf-turnstile" data-sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY} />
+          </>
+        )}
         {state && !state.ok && <p className="text-sm text-destructive">{state.error}</p>}
       </div>
 
