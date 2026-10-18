@@ -32,6 +32,28 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
     .select("id, starts_at, ends_at, status, notes, clients(name, phone), professionals(name), services(name)")
     .gte("starts_at", from).lt("starts_at", to).order("starts_at");
 
+  // Resumen de los próximos 14 días desde hoy, para ver las reservas sin navegar día a día
+  const [ty, tm, td] = todayLocal.split("-").map(Number);
+  const rangeFrom = new TZDate(ty, tm - 1, td, 0, 0, 0, tz).toISOString();
+  const rangeTo = new TZDate(ty, tm - 1, td + 14, 0, 0, 0, tz).toISOString();
+  const { data: upcoming } = await supabase
+    .from("appointments")
+    .select("id, starts_at, status, clients(name), services(name)")
+    .gte("starts_at", rangeFrom).lt("starts_at", rangeTo)
+    .in("status", ["pending", "confirmed"]).order("starts_at");
+
+  const perDay = new Map<string, { total: number; pending: number }>();
+  for (const u of upcoming ?? []) {
+    const k = new Date(u.starts_at).toLocaleDateString("en-CA", { timeZone: tz });
+    const e = perDay.get(k) ?? { total: 0, pending: 0 };
+    e.total++;
+    if (u.status === "pending") e.pending++;
+    perDay.set(k, e);
+  }
+  const days = Array.from({ length: 14 }, (_, i) => shift(todayLocal, i));
+  const pendingList = (upcoming ?? []).filter((u) => u.status === "pending");
+  const fmtDay = (iso: string) => new Date(iso).toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short", timeZone: tz });
+
   const fmt = (iso: string) => new Date(iso).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", timeZone: tz });
 
   return (
@@ -44,6 +66,48 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
         <Link href="?"><Button variant="outline" size="sm">Hoy</Button></Link>
         <Link href={`?date=${shift(date, 1)}`}><Button variant="outline" size="sm">→</Button></Link>
       </div>
+
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {days.map((day) => {
+          const info = perDay.get(day);
+          const active = day === date;
+          return (
+            <Link
+              key={day}
+              href={`?date=${day}`}
+              className={`min-w-16 rounded-lg border p-2 text-center text-xs transition-colors ${active ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+            >
+              <div className="capitalize">{new Date(day + "T12:00:00Z").toLocaleDateString("es-ES", { weekday: "short", timeZone: "UTC" })}</div>
+              <div className="text-base font-bold">{day.slice(8)}</div>
+              {info ? (
+                <div className={`mt-1 rounded-full px-1.5 py-0.5 font-semibold ${active ? "bg-primary-foreground text-primary" : info.pending ? "bg-amber-500 text-white" : "bg-primary text-primary-foreground"}`}>
+                  {info.total}
+                </div>
+              ) : (
+                <div className="mt-1 py-0.5 opacity-40">–</div>
+              )}
+            </Link>
+          );
+        })}
+      </div>
+
+      {pendingList.length > 0 && (
+        <Card className="border-amber-500/50">
+          <CardContent className="space-y-2 p-4">
+            <div className="font-semibold">{pendingList.length} reserva{pendingList.length > 1 ? "s" : ""} pendiente{pendingList.length > 1 ? "s" : ""} de confirmar</div>
+            <ul className="space-y-1 text-sm">
+              {pendingList.map((u) => (
+                <li key={u.id}>
+                  <Link className="underline" href={`?date=${new Date(u.starts_at).toLocaleDateString("en-CA", { timeZone: tz })}`}>
+                    <span className="capitalize">{fmtDay(u.starts_at)}</span> {fmt(u.starts_at)}
+                  </Link>{" "}
+                  · {(u.clients as unknown as { name: string }).name} · {(u.services as unknown as { name: string }).name}
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
 
       {(appts ?? []).length === 0 && <p className="text-muted-foreground">No hay citas este día.</p>}
 
@@ -63,11 +127,11 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
               <Badge variant={a.status === "cancelled" || a.status === "no_show" ? "destructive" : "secondary"}>{LABEL[a.status]}</Badge>
               <form action={setAppointmentStatus} className="flex gap-1">
                 <input type="hidden" name="id" value={a.id} />
-                {a.status === "pending" && <Button size="xs" name="status" value="confirmed">Confirmar</Button>}
+                {a.status === "pending" && <Button type="submit" size="xs" name="status" value="confirmed">Confirmar</Button>}
                 {(a.status === "pending" || a.status === "confirmed") && (
                   <>
-                    <Button size="xs" variant="outline" name="status" value="completed">Completar</Button>
-                    <Button size="xs" variant="destructive" name="status" value="cancelled">Cancelar</Button>
+                    <Button type="submit" size="xs" variant="outline" name="status" value="completed">Completar</Button>
+                    <Button type="submit" size="xs" variant="destructive" name="status" value="cancelled">Cancelar</Button>
                   </>
                 )}
               </form>

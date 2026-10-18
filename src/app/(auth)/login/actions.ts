@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { slugError } from "@/lib/slug";
 
@@ -35,10 +36,12 @@ export async function signUp(formData: FormData) {
   if (!(await checkSlug(slug))) failSignup("Esa dirección ya está en uso. Elige otra.");
 
   const supabase = await createClient();
+  const h = await headers();
+  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? `${h.get("x-forwarded-proto") ?? "http"}://${h.get("x-forwarded-host") ?? h.get("host")}`;
   const { data, error } = await supabase.auth.signUp({
     email: String(formData.get("email") ?? ""),
     password,
-    options: { data: { business_name: name, business_slug: slug } },
+    options: { data: { business_name: name, business_slug: slug }, emailRedirectTo: `${origin}/auth/callback` },
   });
   if (error) failSignup(error.message);
   // Sin sesión = confirmación por email pendiente; el negocio se crea en el primer acceso
