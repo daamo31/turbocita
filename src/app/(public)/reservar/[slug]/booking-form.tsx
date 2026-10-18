@@ -31,15 +31,55 @@ function Choice({ active, onClick, children }: { active: boolean; onClick: () =>
 }
 
 const STEPS = ["Servicio", "Profesional", "Fecha y hora", "Tus datos"];
-const DAYS_AHEAD = 21;
-
-const dayList = () =>
-  Array.from({ length: DAYS_AHEAD }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() + i);
-    return d;
-  });
+const MAX_DAYS_AHEAD = 90; // horizonte de reserva
 const ymd = (d: Date) => d.toLocaleDateString("en-CA");
+
+// Calendario mensual de 7 columnas: cabe en cualquier ancho (empieza en lunes)
+function Calendar({ month, setMonth, date, onPick }: { month: Date; setMonth: (d: Date) => void; date: string; onPick: (v: string) => void }) {
+  const todayD = new Date(); todayD.setHours(0, 0, 0, 0);
+  const last = new Date(todayD); last.setDate(last.getDate() + MAX_DAYS_AHEAD);
+  const lead = (month.getDay() + 6) % 7;
+  const count = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+  const cells = [...Array(lead).fill(null), ...Array.from({ length: count }, (_, i) => new Date(month.getFullYear(), month.getMonth(), i + 1))];
+  const prev = new Date(month.getFullYear(), month.getMonth() - 1, 1);
+  const next = new Date(month.getFullYear(), month.getMonth() + 1, 1);
+  const canPrev = new Date(month.getFullYear(), month.getMonth() + 1, 0) >= todayD && prev.getTime() >= new Date(todayD.getFullYear(), todayD.getMonth(), 1).getTime();
+  const canNext = next <= last;
+
+  return (
+    <div className="bk-card p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <button type="button" disabled={!canPrev} onClick={() => setMonth(prev)} aria-label="Mes anterior" className="flex size-11 items-center justify-center rounded-full text-lg disabled:opacity-30">‹</button>
+        <div className="font-semibold capitalize">{month.toLocaleDateString("es-ES", { month: "long", year: "numeric" })}</div>
+        <button type="button" disabled={!canNext} onClick={() => setMonth(next)} aria-label="Mes siguiente" className="flex size-11 items-center justify-center rounded-full text-lg disabled:opacity-30">›</button>
+      </div>
+      <div className="grid grid-cols-7 text-center text-xs text-muted-foreground">
+        {["L", "M", "X", "J", "V", "S", "D"].map((d) => <div key={d} className="py-1">{d}</div>)}
+      </div>
+      <div className="grid grid-cols-7 gap-1">
+        {cells.map((d, i) => {
+          if (!d) return <div key={i} />;
+          const v = ymd(d);
+          const disabled = d < todayD || d > last;
+          const active = v === date;
+          return (
+            <button
+              key={v} type="button" disabled={disabled} onClick={() => onPick(v)}
+              className={cn(
+                "aspect-square min-h-11 rounded-full text-sm transition",
+                disabled ? "text-muted-foreground/40" : "hover:bg-muted",
+                d.getTime() === todayD.getTime() && !active && "font-bold text-primary",
+                active && "bg-primary font-bold text-primary-foreground hover:bg-primary"
+              )}
+            >
+              {d.getDate()}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 const googleCalUrl = (title: string, startsAt: string, endsAt: string) => {
   const f = (iso: string) => new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
@@ -57,13 +97,15 @@ export function BookingForm({
   const [startsAt, setStartsAt] = useState("");
   const [loading, startLoading] = useTransition();
   const [step, setStep] = useState(0);
-  const days = useMemo(() => dayList(), []);
+  const [month, setMonth] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
 
   // Cada paso empieza arriba para que no se quede a medio scroll en el móvil
   const goTo = (n: number) => { setStep(n); window.scrollTo({ top: 0, behavior: "smooth" }); };
 
   const service = services.find((s) => s.id === serviceId);
   const pro = professionals.find((p) => p.id === proId);
+  const morning = (slots ?? []).filter((x) => x.label < "14:00");
+  const afternoon = (slots ?? []).filter((x) => x.label >= "14:00");
   const available = useMemo(
     () => professionals.filter((p) => links.some((l) => l.professional_id === p.id && l.service_id === serviceId)),
     [professionals, links, serviceId]
@@ -187,34 +229,27 @@ export function BookingForm({
 
       {step === 2 && (
         <div className="space-y-4">
-          <div className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1">
-            {days.map((d) => {
-              const v = ymd(d);
-              const active = v === date;
-              return (
-                <button
-                  key={v} type="button" onClick={() => setDate(v)}
-                  className={cn("bk-card min-w-16 shrink-0 snap-start px-2 py-2 text-center", active && "!border-primary !bg-primary text-primary-foreground")}
-                >
-                  <div className="text-xs capitalize">{d.toLocaleDateString("es-ES", { weekday: "short" })}</div>
-                  <div className="text-lg font-bold">{d.getDate()}</div>
-                  <div className="text-xs capitalize">{d.toLocaleDateString("es-ES", { month: "short" })}</div>
-                </button>
-              );
-            })}
-          </div>
+          <Calendar month={month} setMonth={setMonth} date={date} onPick={setDate} />
           {loading && <p className="text-sm text-muted-foreground">Buscando huecos…</p>}
           {!loading && slots?.length === 0 && <p className="bk-card p-4 text-sm text-muted-foreground">No hay huecos este día. Prueba con otro.</p>}
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-            {slots?.map((sl) => (
-              <button
-                key={sl.iso} type="button" onClick={() => chooseSlot(sl.iso)}
-                className={cn("bk-card py-3 text-center text-sm font-medium transition hover:!border-primary", sl.iso === startsAt && "!border-primary ring-2 ring-primary")}
-              >
-                {sl.label}
-              </button>
-            ))}
-          </div>
+          {/* Horas agrupadas: cuadrícula de 3 columnas, sin scroll horizontal */}
+          {[["Mañana", morning], ["Tarde", afternoon]].map(([label, list]) =>
+            (list as Slot[]).length > 0 && (
+              <div key={label as string} className="space-y-2">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label as string}</h3>
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                  {(list as Slot[]).map((sl) => (
+                    <button
+                      key={sl.iso} type="button" onClick={() => chooseSlot(sl.iso)}
+                      className={cn("bk-card h-12 text-center text-sm font-medium transition hover:!border-primary", sl.iso === startsAt && "!border-primary ring-2 ring-primary")}
+                    >
+                      {sl.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )
+          )}
         </div>
       )}
 
