@@ -9,7 +9,7 @@ export default async function AppearancePage() {
   const { supabase, business, role } = await getContext();
   const [{ data: b }, { data: priv }] = await Promise.all([
     supabase.from("businesses")
-      .select("name, theme, brand_color, tagline, description, phone, address, logo_url, custom_domain")
+      .select("name, theme, layout, card_style, brand_color, tagline, description, phone, address, logo_url, custom_domain")
       .eq("id", business.id).single(),
     supabase.from("business_private").select("tax_id, email").eq("business_id", business.id).maybeSingle(),
   ]);

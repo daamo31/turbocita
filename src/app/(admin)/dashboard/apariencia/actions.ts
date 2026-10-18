@@ -3,10 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getContext } from "@/lib/auth";
-import { THEME_KEYS } from "@/lib/themes";
+import { THEME_KEYS, LAYOUT_KEYS, CARD_STYLES } from "@/lib/themes";
 
 const schema = z.object({
   theme: z.enum(THEME_KEYS),
+  layout: z.enum(LAYOUT_KEYS),
+  card_style: z.enum(["auto", ...(Object.keys(CARD_STYLES) as [string, ...string[]])]),
   brand_color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().or(z.literal("")),
   tagline: z.string().trim().max(120),
   description: z.string().trim().max(400),
@@ -22,6 +24,8 @@ export async function saveBranding(formData: FormData) {
   const d = parsed.data;
   await supabase.from("businesses").update({
     theme: d.theme,
+    layout: d.layout,
+    card_style: d.card_style,
     brand_color: d.brand_color || null,
     tagline: d.tagline || null,
     description: d.description || null,

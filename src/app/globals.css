@@ -128,3 +128,19 @@
     @apply font-sans;
   }
 }
+/* Página pública de reservas: decoración controlada por themeStyle() */
+.bk-backdrop {
+  background-image: var(--bk-backdrop);
+  background-repeat: no-repeat;
+}
+.bk-title {
+  font-family: var(--bk-title-font);
+  letter-spacing: -0.01em;
+}
+.bk-card {
+  background: var(--bk-card-bg);
+  border: 1px solid var(--bk-card-border);
+  box-shadow: var(--bk-card-shadow);
+  backdrop-filter: var(--bk-card-blur);
+  border-radius: calc(var(--radius) * 1.4);
+}
