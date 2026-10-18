@@ -12,7 +12,7 @@ export async function getContext() {
   const query = () =>
     supabase
       .from("business_members")
-      .select("role, businesses(id, name, slug, currency, timezone, phone, email, address, tax_id)")
+      .select("role, businesses(id, name, slug, currency, timezone, phone, address, logo_url)")
       .eq("user_id", user.id)
       .limit(1)
       .maybeSingle();
@@ -32,7 +32,7 @@ export async function getContext() {
 
   const business = member!.businesses as unknown as {
     id: string; name: string; slug: string; currency: string; timezone: string;
-    phone: string | null; email: string | null; address: string | null; tax_id: string | null;
+    phone: string | null; address: string | null; logo_url: string | null;
   };
   return { supabase, user, business, role: member!.role as "owner" | "employee" };
 }

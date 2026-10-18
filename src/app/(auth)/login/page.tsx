@@ -25,7 +25,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
             </form>
           </CardContent>
         </Card>
-        <Card>
+        <Card id="registro">
           <CardHeader>
             <CardTitle>Crear negocio</CardTitle>
             <CardDescription>Regístrate y empieza a recibir reservas</CardDescription>

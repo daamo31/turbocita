@@ -9,6 +9,7 @@ const NAV = [
   ["/dashboard/equipo", "Equipo"],
   ["/dashboard/inventario", "Inventario"],
   ["/dashboard/facturacion", "Facturación"],
+  ["/dashboard/apariencia", "Apariencia"],
 ] as const;
 
 export default async function AdminLayout({ children }: LayoutProps<"/dashboard">) {
