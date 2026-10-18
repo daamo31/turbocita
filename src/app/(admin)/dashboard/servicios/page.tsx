@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getContext } from "@/lib/auth";
 import { money } from "@/lib/utils";
-import { createService, toggleService } from "./actions";
+import { createService, deleteService, toggleService } from "./actions";
 
 export default async function ServicesPage() {
   const { supabase, business } = await getContext();
@@ -15,6 +15,7 @@ export default async function ServicesPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-bold">Servicios</h1>
+      <p className="text-sm text-muted-foreground">Eliminar borra el servicio. Si ya tiene citas, se desactiva para conservar el historial.</p>
       <Card>
         <CardHeader><CardTitle>Nuevo servicio</CardTitle></CardHeader>
         <CardContent>
@@ -37,11 +38,17 @@ export default async function ServicesPage() {
                   <div className="text-sm text-muted-foreground">{s.duration_min} min · {money(Number(s.price), business.currency)}</div>
                   <Badge className="mt-1" variant={s.active ? "secondary" : "outline"}>{s.active ? "Activo" : "Inactivo"}</Badge>
                 </div>
-                <form action={toggleService}>
+                <div className="flex flex-col gap-2">
+                  <form action={toggleService}>
+                    <input type="hidden" name="id" value={s.id} />
+                    <input type="hidden" name="active" value={String(!s.active)} />
+                    <Button type="submit" size="xs" variant="outline" className="w-full">{s.active ? "Desactivar" : "Activar"}</Button>
+                  </form>
+                  <form action={deleteService}>
                   <input type="hidden" name="id" value={s.id} />
-                  <input type="hidden" name="active" value={String(!s.active)} />
-                  <Button type="submit" size="xs" variant="outline">{s.active ? "Desactivar" : "Activar"}</Button>
+                  <Button type="submit" size="xs" variant="destructive" className="w-full">Eliminar</Button>
                 </form>
+                </div>
               </CardContent>
             </Card>
           </li>
@@ -59,11 +66,15 @@ export default async function ServicesPage() {
                 <TableCell>{s.duration_min} min</TableCell>
                 <TableCell>{money(Number(s.price), business.currency)}</TableCell>
                 <TableCell><Badge variant={s.active ? "secondary" : "outline"}>{s.active ? "Activo" : "Inactivo"}</Badge></TableCell>
-                <TableCell>
+                <TableCell className="flex gap-2">
                   <form action={toggleService}>
+                    <input type="hidden" name="id" value={s.id} />
+                    <input type="hidden" name="active" value={String(!s.active)} />
+                    <Button type="submit" size="xs" variant="outline">{s.active ? "Desactivar" : "Activar"}</Button>
+                  </form>
+                  <form action={deleteService}>
                   <input type="hidden" name="id" value={s.id} />
-                  <input type="hidden" name="active" value={String(!s.active)} />
-                  <Button type="submit" size="xs" variant="outline">{s.active ? "Desactivar" : "Activar"}</Button>
+                  <Button type="submit" size="xs" variant="destructive">Eliminar</Button>
                 </form>
                 </TableCell>
               </TableRow>

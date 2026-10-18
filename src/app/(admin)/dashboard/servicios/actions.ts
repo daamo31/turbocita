@@ -25,3 +25,12 @@ export async function toggleService(formData: FormData) {
   await supabase.from("services").update({ active }).eq("id", id);
   revalidatePath("/dashboard/servicios");
 }
+
+// Si el servicio ya tiene citas no se puede borrar (historial): se desactiva en su lugar.
+export async function deleteService(formData: FormData) {
+  const id = z.string().uuid().parse(formData.get("id"));
+  const { supabase } = await getContext();
+  const { error } = await supabase.from("services").delete().eq("id", id);
+  if (error?.code === "23503") await supabase.from("services").update({ active: false }).eq("id", id);
+  revalidatePath("/dashboard/servicios");
+}

@@ -14,12 +14,15 @@ export async function GET(req: Request, ctx: RouteContext<"/api/reservas/[id]/ic
 
   const { data: a } = await createAdminClient()
     .from("appointments")
-    .select("id, starts_at, ends_at, services(name), professionals(name), businesses(name, address, phone)")
+    .select("id, starts_at, ends_at, services(name), appointment_services(name, position), professionals(name), businesses(name, address, phone)")
     .eq("id", id).eq("cancel_token", token!).maybeSingle();
   if (!a) return new Response("Not found", { status: 404 });
 
   const biz = a.businesses as unknown as { name: string; address: string | null; phone: string | null };
-  const svc = (a.services as unknown as { name: string }).name;
+  const lines_ = a.appointment_services as { name: string; position: number }[] | null;
+  const svc = lines_?.length
+    ? [...lines_].sort((x, y) => x.position - y.position).map((x) => x.name).join(" + ")
+    : (a.services as unknown as { name: string }).name;
   const pro = (a.professionals as unknown as { name: string }).name;
 
   const lines = [

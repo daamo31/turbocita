@@ -6,7 +6,7 @@ import { sendBookingConfirmation } from "@/lib/notifications/twilio";
 
 const bookingSchema = z.object({
   businessId: z.string().uuid(),
-  serviceId: z.string().uuid(),
+  serviceIds: z.string().transform((v) => v.split(",").filter(Boolean)).pipe(z.array(z.string().uuid()).min(1).max(10)),
   professionalId: z.string().uuid(),
   startsAt: z.string().datetime({ offset: true }), // ISO 8601 con zona horaria
   name: z.string().trim().min(2).max(80),
@@ -40,7 +40,7 @@ export async function createBooking(_prev: BookingState, formData: FormData): Pr
   const { data, error } = await supabase
     .rpc("create_public_booking", {
       p_business: d.businessId,
-      p_service: d.serviceId,
+      p_services: d.serviceIds,
       p_professional: d.professionalId,
       p_starts_at: d.startsAt,
       p_name: d.name,

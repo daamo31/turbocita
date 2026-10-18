@@ -16,6 +16,12 @@ const shift = (date: string, days: number) => {
   return d.toISOString().slice(0, 10);
 };
 
+type ApptServices = { services: unknown; appointment_services: { name: string; position: number }[] | null };
+const serviceLabel = (a: ApptServices) =>
+  a.appointment_services?.length
+    ? [...a.appointment_services].sort((x, y) => x.position - y.position).map((x) => x.name).join(" + ")
+    : (a.services as { name: string } | null)?.name ?? "";
+
 export default async function AgendaPage({ searchParams }: PageProps<"/dashboard/agenda">) {
   const { supabase, business } = await getContext();
   const sp = await searchParams;
@@ -29,7 +35,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
 
   const { data: appts } = await supabase
     .from("appointments")
-    .select("id, starts_at, ends_at, status, notes, clients(name, phone), professionals(name), services(name)")
+    .select("id, starts_at, ends_at, status, notes, clients(name, phone), professionals(name), services(name), appointment_services(name, position)")
     .gte("starts_at", from).lt("starts_at", to).order("starts_at");
 
   // Resumen de los próximos 14 días desde hoy, para ver las reservas sin navegar día a día
@@ -38,7 +44,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
   const rangeTo = new TZDate(ty, tm - 1, td + 14, 0, 0, 0, tz).toISOString();
   const { data: upcoming } = await supabase
     .from("appointments")
-    .select("id, starts_at, status, clients(name), services(name)")
+    .select("id, starts_at, status, clients(name), services(name), appointment_services(name, position)")
     .gte("starts_at", rangeFrom).lt("starts_at", rangeTo)
     .in("status", ["pending", "confirmed"]).order("starts_at");
 
@@ -103,7 +109,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
                   <Link className="underline" href={`?date=${new Date(u.starts_at).toLocaleDateString("en-CA", { timeZone: tz })}`}>
                     <span className="capitalize">{fmtDay(u.starts_at)}</span> {fmt(u.starts_at)}
                   </Link>{" "}
-                  · {(u.clients as unknown as { name: string }).name} · {(u.services as unknown as { name: string }).name}
+                  · {(u.clients as unknown as { name: string }).name} · {serviceLabel(u as ApptServices)}
                 </li>
               ))}
             </ul>
@@ -125,7 +131,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
               <div className="min-w-0 flex-1">
                 <div className="font-medium">{c.name} · <a className="underline" href={`tel:${c.phone}`}>{c.phone}</a></div>
                 <div className="break-words text-sm text-muted-foreground">
-                  {(a.services as unknown as { name: string }).name} · {(a.professionals as unknown as { name: string }).name}
+                  {serviceLabel(a as ApptServices)} · {(a.professionals as unknown as { name: string }).name}
                   {a.notes && ` · ${a.notes}`}
                 </div>
               </div>

@@ -6,7 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 const schema = z.object({
   businessId: z.string().uuid(),
-  serviceId: z.string().uuid(),
+  serviceIds: z.array(z.string().uuid()).min(1).max(10),
   professionalId: z.string().uuid(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 });
@@ -18,16 +18,18 @@ const STEP_MIN = 15;
 export async function getAvailableSlots(input: z.input<typeof schema>): Promise<Slot[]> {
   const parsed = schema.safeParse(input);
   if (!parsed.success) return [];
-  const { businessId, serviceId, professionalId, date } = parsed.data;
+  const { businessId, professionalId, date } = parsed.data;
+  const serviceIds = [...new Set(parsed.data.serviceIds)];
 
   const db = createAdminClient();
-  const [{ data: biz }, { data: service }, { data: link }] = await Promise.all([
+  const [{ data: biz }, { data: services }, { data: links }] = await Promise.all([
     db.from("businesses").select("timezone").eq("id", businessId).single(),
-    db.from("services").select("duration_min").eq("id", serviceId).eq("business_id", businessId).eq("active", true).single(),
-    db.from("professional_services").select("professional_id, professionals!inner(business_id, active)")
-      .eq("professional_id", professionalId).eq("service_id", serviceId).maybeSingle(),
+    db.from("services").select("duration_min").in("id", serviceIds).eq("business_id", businessId).eq("active", true),
+    db.from("professional_services").select("service_id, professionals!inner(business_id, active)")
+      .eq("professional_id", professionalId).in("service_id", serviceIds),
   ]);
-  if (!biz || !service || !link) return [];
+  if (!biz || services?.length !== serviceIds.length || links?.length !== serviceIds.length) return [];
+  const totalMin = services.reduce((sum, s) => sum + s.duration_min, 0);
 
   const tz = biz.timezone;
   const [y, m, d] = date.split("-").map(Number);
@@ -42,13 +44,13 @@ export async function getAvailableSlots(input: z.input<typeof schema>): Promise<
 
   const busyRanges = (busy ?? []).map((b) => [new Date(b.starts_at).getTime(), new Date(b.ends_at).getTime()]);
   const now = Date.now();
-  const durationMs = service.duration_min * 60_000;
+  const durationMs = totalMin * 60_000;
   const slots: Slot[] = [];
 
   for (const h of hours ?? []) {
     const [sh, sm] = h.start_time.split(":").map(Number);
     const [eh, em] = h.end_time.split(":").map(Number);
-    for (let min = sh * 60 + sm; min + service.duration_min <= eh * 60 + em; min += STEP_MIN) {
+    for (let min = sh * 60 + sm; min + totalMin <= eh * 60 + em; min += STEP_MIN) {
       const start = new TZDate(y, m - 1, d, Math.floor(min / 60), min % 60, 0, tz).getTime();
       const end = start + durationMs;
       if (start <= now) continue;

@@ -90,7 +90,7 @@ export function BookingForm({
   businessId, businessName, currency, services, professionals, links,
 }: { businessId: string; businessName: string; currency: string; services: Service[]; professionals: Pro[]; links: Link[] }) {
   const [state, action, pending] = useActionState<BookingState, FormData>(createBooking, null);
-  const [serviceId, setServiceId] = useState("");
+  const [serviceIds, setServiceIds] = useState<string[]>([]);
   const [proId, setProId] = useState("");
   const [date, setDate] = useState(today());
   const [slots, setSlots] = useState<Slot[] | null>(null);
@@ -102,24 +102,28 @@ export function BookingForm({
   // Cada paso empieza arriba para que no se quede a medio scroll en el móvil
   const goTo = (n: number) => { setStep(n); window.scrollTo({ top: 0, behavior: "smooth" }); };
 
-  const service = services.find((s) => s.id === serviceId);
+  const chosen = useMemo(() => services.filter((s) => serviceIds.includes(s.id)), [services, serviceIds]);
+  const totalMin = chosen.reduce((n, s) => n + s.duration_min, 0);
+  const totalPrice = chosen.reduce((n, s) => n + Number(s.price), 0);
+  const serviceNames = chosen.map((s) => s.name).join(" + ");
+  const fmtDuration = (m: number) => (m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ""}` : `${m} min`);
   const pro = professionals.find((p) => p.id === proId);
   const morning = (slots ?? []).filter((x) => x.label < "14:00");
   const afternoon = (slots ?? []).filter((x) => x.label >= "14:00");
   const available = useMemo(
-    () => professionals.filter((p) => links.some((l) => l.professional_id === p.id && l.service_id === serviceId)),
-    [professionals, links, serviceId]
+    () => professionals.filter((p) => serviceIds.every((sid) => links.some((l) => l.professional_id === p.id && l.service_id === sid))),
+    [professionals, links, serviceIds]
   );
 
   useEffect(() => {
-    if (!serviceId || !proId || !date) return;
+    if (serviceIds.length === 0 || !proId || !date) return;
     let cancelled = false;
     startLoading(async () => {
-      const res = await getAvailableSlots({ businessId, serviceId, professionalId: proId, date });
+      const res = await getAvailableSlots({ businessId, serviceIds, professionalId: proId, date });
       if (!cancelled) { setSlots(res); setStartsAt(""); }
     });
     return () => { cancelled = true; };
-  }, [businessId, serviceId, proId, date]);
+  }, [businessId, serviceIds, proId, date]);
 
   if (state?.ok) {
     return (
@@ -127,7 +131,7 @@ export function BookingForm({
         <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-primary text-2xl text-primary-foreground">✓</div>
         <h2 className="bk-title text-2xl font-bold">¡Reserva confirmada!</h2>
         <div className="space-y-1 text-sm">
-          <p className="font-medium">{service?.name} con {pro?.name}</p>
+          <p className="font-medium">{serviceNames} con {pro?.name}</p>
           <p className="text-lg font-semibold capitalize">
             {new Date(startsAt).toLocaleString("es-ES", { dateStyle: "full", timeStyle: "short" })}
           </p>
@@ -137,7 +141,7 @@ export function BookingForm({
           <a href={`/api/reservas/${state.appointmentId}/ics?t=${state.cancelToken}`}>
             <Button type="button" className="w-full">📲 Añadir al calendario del móvil</Button>
           </a>
-          <a href={googleCalUrl(`${service?.name} · ${businessName}`, startsAt, state.endsAt)} target="_blank" rel="noreferrer">
+          <a href={googleCalUrl(`${serviceNames} · ${businessName}`, startsAt, state.endsAt)} target="_blank" rel="noreferrer">
             <Button type="button" variant="outline" className="w-full">Google Calendar</Button>
           </a>
         </div>
@@ -148,9 +152,13 @@ export function BookingForm({
 
   const fe = state && !state.ok ? state.fieldErrors : undefined;
 
-  const chooseService = (id: string) => {
-    setServiceId(id); setSlots(null); setStartsAt("");
-    const pros = professionals.filter((p) => links.some((l) => l.professional_id === p.id && l.service_id === id));
+  const toggleService = (id: string) => {
+    setServiceIds((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
+    setProId(""); setSlots(null); setStartsAt("");
+  };
+  const continueFromServices = () => {
+    if (serviceIds.length === 0) return;
+    const pros = professionals.filter((p) => serviceIds.every((sid) => links.some((l) => l.professional_id === p.id && l.service_id === sid)));
     // Con un único profesional no hace falta preguntar
     if (pros.length === 1) { setProId(pros[0].id); goTo(2); } else { setProId(""); goTo(1); }
   };
@@ -161,7 +169,7 @@ export function BookingForm({
   return (
     <form action={action} className="pb-24">
       <input type="hidden" name="businessId" value={businessId} />
-      <input type="hidden" name="serviceId" value={serviceId} />
+      <input type="hidden" name="serviceIds" value={serviceIds.join(",")} />
       <input type="hidden" name="professionalId" value={proId} />
       <input type="hidden" name="startsAt" value={startsAt} />
 
@@ -182,7 +190,7 @@ export function BookingForm({
         </div>
         {step > 0 && (
           <div className="flex flex-wrap gap-1.5 text-xs">
-            {service && <button type="button" onClick={() => goTo(0)} className="rounded-full border px-2.5 py-1">{service.name} ✎</button>}
+            {chosen.length > 0 && <button type="button" onClick={() => goTo(0)} className="max-w-full truncate rounded-full border px-2.5 py-1">{serviceNames} ✎</button>}
             {pro && step > 1 && <button type="button" onClick={() => goTo(1)} className="rounded-full border px-2.5 py-1">{pro.name} ✎</button>}
             {startsAt && step > 2 && (
               <button type="button" onClick={() => goTo(2)} className="rounded-full border px-2.5 py-1 capitalize">
@@ -195,18 +203,25 @@ export function BookingForm({
 
       {step === 0 && (
         <div className="grid gap-3">
-          {services.map((s) => (
-            <Choice key={s.id} active={s.id === serviceId} onClick={() => chooseService(s.id)}>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="text-base font-medium">{s.name}</div>
-                  {s.description && <div className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{s.description}</div>}
-                  <div className="mt-1 text-xs text-muted-foreground">{s.duration_min} min</div>
+          <p className="text-sm text-muted-foreground">Puedes elegir varios servicios (por ejemplo, corte + barba).</p>
+          {services.map((s) => {
+            const on = serviceIds.includes(s.id);
+            return (
+              <Choice key={s.id} active={on} onClick={() => toggleService(s.id)}>
+                <div className="flex items-start gap-3">
+                  <span aria-hidden className={cn("mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md border-2 text-sm font-bold transition", on ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40")}>
+                    {on && "✓"}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-base font-medium">{s.name}</div>
+                    {s.description && <div className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{s.description}</div>}
+                    <div className="mt-1 text-xs text-muted-foreground">{fmtDuration(s.duration_min)}</div>
+                  </div>
+                  <div className="shrink-0 text-base font-semibold text-primary">{money(Number(s.price), currency)}</div>
                 </div>
-                <div className="shrink-0 text-base font-semibold text-primary">{money(Number(s.price), currency)}</div>
-              </div>
-            </Choice>
-          ))}
+              </Choice>
+            );
+          })}
           {services.length === 0 && <p className="text-sm text-muted-foreground">Este negocio aún no tiene servicios.</p>}
         </div>
       )}
@@ -266,16 +281,28 @@ export function BookingForm({
         {state && !state.ok && <p className="text-sm text-destructive">{state.error}</p>}
       </div>
 
-      {step === 3 && (
-        <div className="fixed inset-x-0 bottom-0 z-10 border-t bg-background/95 p-3 backdrop-blur">
+      {(step === 0 || step === 3) && (
+        <div className="fixed inset-x-0 bottom-0 z-10 border-t bg-background/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur">
           <div className="mx-auto flex max-w-2xl items-center gap-3">
-            <div className="text-xs leading-tight">
-              <div className="font-semibold">{service?.name}</div>
-              <div className="text-muted-foreground">{money(Number(service?.price ?? 0), currency)}</div>
+            <div className="min-w-0 text-xs leading-tight">
+              {chosen.length > 0 ? (
+                <>
+                  <div className="truncate font-semibold">{serviceNames}</div>
+                  <div className="text-muted-foreground">{fmtDuration(totalMin)} · <span className="font-semibold text-foreground">{money(totalPrice, currency)}</span></div>
+                </>
+              ) : (
+                <div className="text-muted-foreground">Selecciona al menos un servicio</div>
+              )}
             </div>
-            <Button type="submit" size="lg" className="h-12 flex-1" disabled={pending || !startsAt}>
-              {pending ? "Reservando…" : "Confirmar reserva"}
-            </Button>
+            {step === 0 ? (
+              <Button type="button" size="lg" className="ml-auto h-12 shrink-0 px-6" disabled={chosen.length === 0} onClick={continueFromServices}>
+                Continuar
+              </Button>
+            ) : (
+              <Button type="submit" size="lg" className="ml-auto h-12 shrink-0 px-6" disabled={pending || !startsAt}>
+                {pending ? "Reservando…" : "Confirmar"}
+              </Button>
+            )}
           </div>
         </div>
       )}
