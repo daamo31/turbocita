@@ -30,31 +30,38 @@ export default async function DocumentPage({ params }: PageProps<"/dashboard/fac
       <div className="flex flex-wrap items-center gap-2">
         <h1 className="mr-auto text-xl font-bold">{title}</h1>
         <Badge>{STATUS_LABEL[d.status as keyof typeof STATUS_LABEL]}</Badge>
-        <a href={`/api/documents/${d.id}/pdf`} target="_blank"><Button variant="outline">Descargar PDF</Button></a>
-        {phone && <a href={`https://wa.me/${phone}?text=${encodeURIComponent(text)}`} target="_blank"><Button variant="outline">WhatsApp</Button></a>}
-        {client?.email && <a href={`mailto:${client.email}?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(text)}`}><Button variant="outline">Email</Button></a>}
-        <Link href="/dashboard/facturacion"><Button variant="ghost">Volver</Button></Link>
+      </div>
+      {/* Acciones: rejilla de 2 columnas en móvil, en línea desde sm */}
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+        <a href={`/api/documents/${d.id}/pdf`} target="_blank"><Button variant="outline" className="w-full">Descargar PDF</Button></a>
+        {phone && <a href={`https://wa.me/${phone}?text=${encodeURIComponent(text)}`} target="_blank"><Button variant="outline" className="w-full">WhatsApp</Button></a>}
+        {client?.email && <a href={`mailto:${client.email}?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(text)}`}><Button variant="outline" className="w-full">Email</Button></a>}
+        <Link href="/dashboard/facturacion"><Button variant="ghost" className="w-full">Volver</Button></Link>
       </div>
 
       <Card>
         <CardContent className="space-y-3 p-4 text-sm">
           <div>Cliente: {client ? `${client.name} · ${client.phone}` : "—"}</div>
-          <table className="w-full">
-            <tbody>
-              {items.map((i, k) => (
-                <tr key={k} className="border-b"><td className="py-1">{i.description}</td><td>{Number(i.quantity)} × {money(Number(i.unit_price), business.currency)}</td>
-                  <td className="text-right">{money(Number(i.quantity) * Number(i.unit_price), business.currency)}</td></tr>
-              ))}
-            </tbody>
-          </table>
+          {/* Líneas: descripción arriba y cantidad × precio / importe debajo; sin scroll horizontal */}
+          <ul className="divide-y">
+            {items.map((i, k) => (
+              <li key={k} className="flex items-start justify-between gap-3 py-2">
+                <div className="min-w-0">
+                  <div className="break-words">{i.description}</div>
+                  <div className="text-xs text-muted-foreground">{Number(i.quantity)} × {money(Number(i.unit_price), business.currency)}</div>
+                </div>
+                <div className="shrink-0 font-medium">{money(Number(i.quantity) * Number(i.unit_price), business.currency)}</div>
+              </li>
+            ))}
+          </ul>
           <div className="text-right font-bold">Total (IVA {Number(d.tax_rate)}% incl.): {money(total, business.currency)}</div>
         </CardContent>
       </Card>
 
-      <form action={setDocumentStatus} className="flex gap-2">
+      <form action={setDocumentStatus} className="grid grid-cols-3 gap-2 sm:flex">
         <input type="hidden" name="id" value={d.id} />
         {(["pending", "paid", "cancelled"] as const).map((st) => (
-          <Button key={st} name="status" value={st} variant={d.status === st ? "default" : "outline"} size="sm">{STATUS_LABEL[st]}</Button>
+          <Button key={st} name="status" value={st} type="submit" variant={d.status === st ? "default" : "outline"}>{STATUS_LABEL[st]}</Button>
         ))}
       </form>
     </div>

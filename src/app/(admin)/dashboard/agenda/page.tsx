@@ -59,15 +59,17 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <h1 className="mr-auto text-xl font-bold">
-          Agenda · {new Date(date + "T12:00:00Z").toLocaleDateString("es-ES", { dateStyle: "full", timeZone: "UTC" })}
+        <h1 className="w-full text-lg font-bold capitalize sm:w-auto sm:flex-1 sm:text-xl">
+          {new Date(date + "T12:00:00Z").toLocaleDateString("es-ES", { dateStyle: "full", timeZone: "UTC" })}
         </h1>
-        <Link href={`?date=${shift(date, -1)}`}><Button variant="outline" size="sm">←</Button></Link>
-        <Link href="?"><Button variant="outline" size="sm">Hoy</Button></Link>
-        <Link href={`?date=${shift(date, 1)}`}><Button variant="outline" size="sm">→</Button></Link>
+        <div className="grid w-full grid-cols-[1fr_2fr_1fr] gap-2 sm:flex sm:w-auto">
+          <Link href={`?date=${shift(date, -1)}`}><Button variant="outline" className="w-full" aria-label="Día anterior">←</Button></Link>
+          <Link href="?"><Button variant="outline" className="w-full">Hoy</Button></Link>
+          <Link href={`?date=${shift(date, 1)}`}><Button variant="outline" className="w-full" aria-label="Día siguiente">→</Button></Link>
+        </div>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1">
         {days.map((day) => {
           const info = perDay.get(day);
           const active = day === date;
@@ -75,7 +77,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
             <Link
               key={day}
               href={`?date=${day}`}
-              className={`min-w-16 rounded-lg border p-2 text-center text-xs transition-colors ${active ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+              className={`min-w-16 shrink-0 snap-start rounded-lg border p-2 text-center text-xs transition-colors ${active ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"}`}
             >
               <div className="capitalize">{new Date(day + "T12:00:00Z").toLocaleDateString("es-ES", { weekday: "short", timeZone: "UTC" })}</div>
               <div className="text-base font-bold">{day.slice(8)}</div>
@@ -115,17 +117,21 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
         const c = a.clients as unknown as { name: string; phone: string };
         return (
           <Card key={a.id}>
-            <CardContent className="flex flex-wrap items-center gap-3 p-4">
-              <div className="w-28 font-mono text-sm">{fmt(a.starts_at)} – {fmt(a.ends_at)}</div>
-              <div className="min-w-40 flex-1">
+            <CardContent className="space-y-3 p-4 md:flex md:items-center md:gap-4 md:space-y-0">
+              <div className="flex items-center justify-between gap-2 md:block md:w-32 md:shrink-0">
+                <div className="font-mono text-base font-semibold md:text-sm">{fmt(a.starts_at)} – {fmt(a.ends_at)}</div>
+                <Badge className="md:hidden" variant={a.status === "cancelled" || a.status === "no_show" ? "destructive" : "secondary"}>{LABEL[a.status]}</Badge>
+              </div>
+              <div className="min-w-0 flex-1">
                 <div className="font-medium">{c.name} · <a className="underline" href={`tel:${c.phone}`}>{c.phone}</a></div>
-                <div className="text-sm text-muted-foreground">
+                <div className="break-words text-sm text-muted-foreground">
                   {(a.services as unknown as { name: string }).name} · {(a.professionals as unknown as { name: string }).name}
                   {a.notes && ` · ${a.notes}`}
                 </div>
               </div>
-              <Badge variant={a.status === "cancelled" || a.status === "no_show" ? "destructive" : "secondary"}>{LABEL[a.status]}</Badge>
-              <form action={setAppointmentStatus} className="flex gap-1">
+              <Badge className="hidden md:inline-flex" variant={a.status === "cancelled" || a.status === "no_show" ? "destructive" : "secondary"}>{LABEL[a.status]}</Badge>
+              {/* Botones a todo el ancho en móvil para pulsar con el pulgar */}
+              <form action={setAppointmentStatus} className="flex flex-wrap gap-2 [&>button]:flex-1 md:[&>button]:flex-none">
                 <input type="hidden" name="id" value={a.id} />
                 {a.status === "pending" && <Button type="submit" size="xs" name="status" value="confirmed">Confirmar</Button>}
                 {(a.status === "pending" || a.status === "confirmed") && (

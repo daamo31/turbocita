@@ -12,7 +12,7 @@ import { createDocument } from "../actions";
 type Line = { description: string; quantity: number; unit_price: number };
 type Client = { id: string; name: string; phone: string };
 
-const selectCls = "h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm";
+const selectCls = "h-11 md:h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm";
 
 export function DocumentForm({
   currency, clients, catalog,
@@ -29,7 +29,7 @@ export function DocumentForm({
     <form action={createDocument} className="space-y-4">
       <input type="hidden" name="items" value={JSON.stringify(lines)} />
       <Card>
-        <CardContent className="grid gap-3 p-4 sm:grid-cols-3">
+        <CardContent className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="space-y-1"><Label>Tipo</Label>
             <select name="type" className={selectCls} defaultValue="invoice">
               <option value="invoice">Factura</option><option value="quote">Presupuesto</option>
@@ -60,19 +60,31 @@ export function DocumentForm({
               ))}
             </div>
           )}
+          {/* Móvil: cada línea es una mini-tarjeta con etiquetas; md+: fila compacta de 12 columnas */}
           {lines.map((l, i) => (
-            <div key={i} className="grid grid-cols-12 gap-2">
-              <Input className="col-span-6" placeholder="Descripción" value={l.description} onChange={(e) => update(i, { description: e.target.value })} />
-              <Input className="col-span-2" type="number" min={0.01} step="0.01" value={l.quantity} onChange={(e) => update(i, { quantity: Number(e.target.value) })} />
-              <Input className="col-span-3" type="number" min={0} step="0.01" value={l.unit_price} onChange={(e) => update(i, { unit_price: Number(e.target.value) })} />
-              <Button type="button" variant="ghost" size="icon" className="col-span-1" disabled={lines.length === 1}
-                onClick={() => setLines((ls) => ls.filter((_, j) => j !== i))}>✕</Button>
+            <div key={i} className="grid grid-cols-2 gap-2 rounded-lg border p-3 md:grid-cols-12 md:border-0 md:p-0">
+              <div className="col-span-2 space-y-1 md:col-span-6">
+                <Label className="md:sr-only">Descripción</Label>
+                <Input placeholder="Descripción" value={l.description} onChange={(e) => update(i, { description: e.target.value })} />
+              </div>
+              <div className="space-y-1 md:col-span-2">
+                <Label className="md:sr-only">Cantidad</Label>
+                <Input type="number" inputMode="decimal" min={0.01} step="0.01" value={l.quantity} onChange={(e) => update(i, { quantity: Number(e.target.value) })} />
+              </div>
+              <div className="space-y-1 md:col-span-3">
+                <Label className="md:sr-only">Precio</Label>
+                <Input type="number" inputMode="decimal" min={0} step="0.01" value={l.unit_price} onChange={(e) => update(i, { unit_price: Number(e.target.value) })} />
+              </div>
+              <Button type="button" variant="ghost" size="icon" aria-label="Quitar línea" className="col-span-2 w-full md:col-span-1 md:w-auto md:self-end"
+                disabled={lines.length === 1} onClick={() => setLines((ls) => ls.filter((_, j) => j !== i))}>
+                <span aria-hidden>✕</span><span className="ml-1 text-sm md:hidden">Quitar</span>
+              </Button>
             </div>
           ))}
-          <Button type="button" variant="outline" size="sm" onClick={() => setLines((ls) => [...ls, { description: "", quantity: 1, unit_price: 0 }])}>
+          <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={() => setLines((ls) => [...ls, { description: "", quantity: 1, unit_price: 0 }])}>
             + Añadir línea
           </Button>
-          <div className="ml-auto w-56 space-y-1 text-right text-sm">
+          <div className="ml-auto w-full space-y-1 text-right text-sm sm:w-56">
             <div>Subtotal: {money(subtotal, currency)}</div>
             <div>IVA: {money(taxAmount, currency)}</div>
             <div className="text-base font-bold">Total: {money(subtotal + taxAmount, currency)}</div>
@@ -81,7 +93,7 @@ export function DocumentForm({
       </Card>
 
       <div className="space-y-1"><Label>Notas</Label><Textarea name="notes" maxLength={1000} /></div>
-      <Button type="submit" disabled={!valid}>Crear documento</Button>
+      <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={!valid}>Crear documento</Button>
     </form>
   );
 }

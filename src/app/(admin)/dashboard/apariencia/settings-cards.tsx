@@ -23,7 +23,7 @@ export function LogoCard({ logoUrl }: { logoUrl: string | null }) {
           <img src={logoUrl} alt="Logo actual" className="h-20 w-auto rounded border bg-white p-1" />
         )}
         <form action={action} className="flex flex-wrap items-center gap-2">
-          <Input name="logo" type="file" accept="image/png,image/jpeg,image/webp" required className="max-w-xs" />
+          <Input name="logo" type="file" accept="image/png,image/jpeg,image/webp" required className="w-full sm:max-w-xs" />
           <Button type="submit" disabled={pending}>{pending ? "Subiendo…" : "Subir"}</Button>
         </form>
         {logoUrl && (

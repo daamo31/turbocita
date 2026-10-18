@@ -25,26 +25,26 @@ export default async function TeamPage() {
             <div className="space-y-1"><Label>Nombre</Label><Input name="name" required /></div>
             <fieldset className="space-y-1">
               <Label>Servicios que realiza</Label>
-              <div className="flex flex-wrap gap-3 text-sm">
+              <div className="flex flex-wrap gap-2 text-sm">
                 {(services ?? []).map((s) => (
-                  <label key={s.id} className="flex items-center gap-1"><input type="checkbox" name="services" value={s.id} /> {s.name}</label>
+                  <label key={s.id} className="flex min-h-11 items-center gap-2 rounded-lg border px-3"><input type="checkbox" name="services" value={s.id} className="size-4" /> {s.name}</label>
                 ))}
                 {(services ?? []).length === 0 && <span className="text-muted-foreground">Crea primero algún servicio.</span>}
               </div>
             </fieldset>
             <fieldset className="space-y-1">
               <Label>Días laborables</Label>
-              <div className="flex gap-3 text-sm">
+              <div className="flex flex-wrap gap-2 text-sm">
                 {DAYS.map(([v, l]) => (
-                  <label key={v} className="flex items-center gap-1"><input type="checkbox" name="days" value={v} defaultChecked={v !== "0" && v !== "6"} /> {l}</label>
+                  <label key={v} className="flex size-11 items-center justify-center gap-1 rounded-lg border has-[:checked]:border-primary has-[:checked]:bg-primary/10"><input type="checkbox" name="days" value={v} defaultChecked={v !== "0" && v !== "6"} className="size-4" /> {l}</label>
                 ))}
               </div>
             </fieldset>
-            <div className="flex gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:flex">
               <div className="space-y-1"><Label>Entrada</Label><Input name="start" type="time" defaultValue="09:00" required /></div>
               <div className="space-y-1"><Label>Salida</Label><Input name="end" type="time" defaultValue="18:00" required /></div>
             </div>
-            <Button type="submit">Añadir profesional</Button>
+            <Button type="submit" className="w-full sm:w-auto">Añadir profesional</Button>
           </form>
         </CardContent>
       </Card>
@@ -54,13 +54,13 @@ export default async function TeamPage() {
           <CardContent className="flex flex-wrap items-center gap-3 p-4">
             <span className="font-medium">{p.name}</span>
             <Badge variant={p.active ? "secondary" : "outline"}>{p.active ? "Activo" : "Inactivo"}</Badge>
-            <span className="flex-1 text-sm text-muted-foreground">
+            <span className="w-full flex-1 text-sm text-muted-foreground sm:w-auto">
               {(p.professional_services as unknown as { services: { name: string } }[]).map((x) => x.services.name).join(", ")}
             </span>
             <form action={toggleProfessional}>
               <input type="hidden" name="id" value={p.id} />
               <input type="hidden" name="active" value={String(!p.active)} />
-              <Button size="xs" variant="outline">{p.active ? "Desactivar" : "Activar"}</Button>
+              <Button type="submit" size="xs" variant="outline">{p.active ? "Desactivar" : "Activar"}</Button>
             </form>
           </CardContent>
         </Card>
