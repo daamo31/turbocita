@@ -1,0 +1,87 @@
+"use client";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { money } from "@/lib/utils";
+import { createDocument } from "../actions";
+
+type Line = { description: string; quantity: number; unit_price: number };
+type Client = { id: string; name: string; phone: string };
+
+const selectCls = "h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm";
+
+export function DocumentForm({
+  currency, clients, catalog,
+}: { currency: string; clients: Client[]; catalog: { name: string; price: number }[] }) {
+  const [lines, setLines] = useState<Line[]>([{ description: "", quantity: 1, unit_price: 0 }]);
+  const [tax, setTax] = useState(21);
+
+  const update = (i: number, patch: Partial<Line>) => setLines((ls) => ls.map((l, j) => (j === i ? { ...l, ...patch } : l)));
+  const subtotal = lines.reduce((s, l) => s + l.quantity * l.unit_price, 0);
+  const taxAmount = subtotal * (tax / 100);
+  const valid = lines.length > 0 && lines.every((l) => l.description.trim() && l.quantity > 0);
+
+  return (
+    <form action={createDocument} className="space-y-4">
+      <input type="hidden" name="items" value={JSON.stringify(lines)} />
+      <Card>
+        <CardContent className="grid gap-3 p-4 sm:grid-cols-3">
+          <div className="space-y-1"><Label>Tipo</Label>
+            <select name="type" className={selectCls} defaultValue="invoice">
+              <option value="invoice">Factura</option><option value="quote">Presupuesto</option>
+            </select></div>
+          <div className="space-y-1"><Label>Cliente existente</Label>
+            <select name="clientId" className={selectCls} defaultValue="">
+              <option value="">— Nuevo / sin cliente —</option>
+              {clients.map((c) => <option key={c.id} value={c.id}>{c.name} ({c.phone})</option>)}
+            </select></div>
+          <div className="space-y-1"><Label>Vencimiento</Label><Input name="dueDate" type="date" /></div>
+          <div className="space-y-1"><Label>Nuevo cliente: nombre</Label><Input name="newName" /></div>
+          <div className="space-y-1"><Label>Nuevo cliente: teléfono</Label><Input name="newPhone" /></div>
+          <div className="space-y-1"><Label>IVA (%)</Label>
+            <Input name="taxRate" type="number" min={0} max={100} step="0.01" value={tax} onChange={(e) => setTax(Number(e.target.value))} /></div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="space-y-3 p-4">
+          {catalog.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <span className="text-muted-foreground">Añadir del catálogo:</span>
+              {catalog.map((c, i) => (
+                <Button key={i} type="button" size="xs" variant="outline"
+                  onClick={() => setLines((ls) => [...ls.filter((l) => l.description || l.unit_price), { description: c.name, quantity: 1, unit_price: c.price }])}>
+                  {c.name}
+                </Button>
+              ))}
+            </div>
+          )}
+          {lines.map((l, i) => (
+            <div key={i} className="grid grid-cols-12 gap-2">
+              <Input className="col-span-6" placeholder="Descripción" value={l.description} onChange={(e) => update(i, { description: e.target.value })} />
+              <Input className="col-span-2" type="number" min={0.01} step="0.01" value={l.quantity} onChange={(e) => update(i, { quantity: Number(e.target.value) })} />
+              <Input className="col-span-3" type="number" min={0} step="0.01" value={l.unit_price} onChange={(e) => update(i, { unit_price: Number(e.target.value) })} />
+              <Button type="button" variant="ghost" size="icon" className="col-span-1" disabled={lines.length === 1}
+                onClick={() => setLines((ls) => ls.filter((_, j) => j !== i))}>✕</Button>
+            </div>
+          ))}
+          <Button type="button" variant="outline" size="sm" onClick={() => setLines((ls) => [...ls, { description: "", quantity: 1, unit_price: 0 }])}>
+            + Añadir línea
+          </Button>
+          <div className="ml-auto w-56 space-y-1 text-right text-sm">
+            <div>Subtotal: {money(subtotal, currency)}</div>
+            <div>IVA: {money(taxAmount, currency)}</div>
+            <div className="text-base font-bold">Total: {money(subtotal + taxAmount, currency)}</div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="space-y-1"><Label>Notas</Label><Textarea name="notes" maxLength={1000} /></div>
+      <Button type="submit" disabled={!valid}>Crear documento</Button>
+    </form>
+  );
+}
