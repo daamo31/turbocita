@@ -144,3 +144,19 @@
   backdrop-filter: var(--bk-card-blur);
   border-radius: calc(var(--radius) * 1.4);
 }
+
+.bk-pattern {
+  pointer-events: none;
+  background-image: var(--bk-pattern);
+  background-size: var(--bk-pattern-size);
+  opacity: var(--bk-pattern-opacity);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, rgb(0 0 0 / 0.35) 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, rgb(0 0 0 / 0.35) 100%);
+  animation: bk-drift 90s linear infinite;
+}
+@keyframes bk-drift {
+  to { background-position: var(--bk-pattern-size) var(--bk-pattern-size); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bk-pattern { animation: none; }
+}

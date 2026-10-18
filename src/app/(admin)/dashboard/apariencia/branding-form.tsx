@@ -8,13 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import {
-  BRAND_COLORS, CARD_STYLES, LAYOUTS, THEMES, themeStyle,
-  type CardStyleKey, type LayoutKey, type ThemeKey,
+  BRAND_COLORS, CARD_STYLES, LAYOUTS, PATTERNS, THEMES, patternTile, resolvePattern, themeStyle,
+  type CardStyleKey, type LayoutKey, type PatternKey, type ThemeKey,
 } from "@/lib/themes";
 import { saveBranding } from "./actions";
 
 type Initial = {
-  name: string; theme: string; layout: string; card_style: string; brand_color: string | null; tagline: string | null;
+  name: string; theme: string; layout: string; card_style: string; pattern: string; brand_color: string | null; tagline: string | null;
   description: string | null; phone: string | null; address: string | null; logo_url: string | null;
 };
 
@@ -24,6 +24,7 @@ export function BrandingForm({ initial }: { initial: Initial }) {
   const [theme, setTheme] = useState<ThemeKey>(pick(initial.theme, THEMES, "classic"));
   const [layout, setLayout] = useState<LayoutKey>(pick(initial.layout, LAYOUTS, "classic"));
   const [cardStyle, setCardStyle] = useState<CardStyleKey | "auto">(pick(initial.card_style, { ...CARD_STYLES, auto: 1 }, "auto"));
+  const [pattern, setPattern] = useState<PatternKey | "auto" | "none">(pick(initial.pattern, { ...PATTERNS, auto: 1, none: 1 }, "auto"));
   const [useBrand, setUseBrand] = useState(!!initial.brand_color);
   const [color, setColor] = useState(initial.brand_color ?? THEMES[theme].primary);
   const [tagline, setTagline] = useState(initial.tagline ?? "");
@@ -38,6 +39,7 @@ export function BrandingForm({ initial }: { initial: Initial }) {
       <input type="hidden" name="theme" value={theme} />
       <input type="hidden" name="layout" value={layout} />
       <input type="hidden" name="card_style" value={cardStyle} />
+      <input type="hidden" name="pattern" value={pattern} />
       <input type="hidden" name="brand_color" value={brand ?? ""} />
 
       <div className="space-y-6">
@@ -99,6 +101,27 @@ export function BrandingForm({ initial }: { initial: Initial }) {
         </div>
 
         <div className="space-y-2">
+          <Label>Decoración de fondo</Label>
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+            {(["auto", "none", ...Object.keys(PATTERNS)] as (PatternKey | "auto" | "none")[]).map((k) => {
+              const shown = k === "auto" ? resolvePattern("auto", theme) : k === "none" ? null : k;
+              return (
+                <button
+                  key={k} type="button" onClick={() => setPattern(k)}
+                  className={cn("overflow-hidden rounded-lg border text-left text-xs transition hover:bg-muted", k === pattern && "ring-2 ring-primary")}
+                >
+                  <div
+                    className="h-10 bg-muted"
+                    style={shown ? { backgroundImage: patternTile(shown, brand ?? THEMES[theme].primary).url, backgroundSize: "40px", opacity: 0.8 } : undefined}
+                  />
+                  <div className="p-1.5">{k === "auto" ? "Según plantilla" : k === "none" ? "Ninguna" : PATTERNS[k]}</div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="space-y-2">
           <Label>Estilo de tarjetas</Label>
           <div className="flex flex-wrap gap-2">
             {(["auto", ...Object.keys(CARD_STYLES)] as (CardStyleKey | "auto")[]).map((k) => (
@@ -122,7 +145,8 @@ export function BrandingForm({ initial }: { initial: Initial }) {
 
       <div className="space-y-2 xl:sticky xl:top-4 xl:self-start">
         <Label>Vista previa</Label>
-        <div style={themeStyle(theme, brand, cardStyle)} className="bk-backdrop max-h-[640px] overflow-y-auto rounded-xl border">
+        <div style={themeStyle(theme, brand, cardStyle, pattern)} className="bk-backdrop relative isolate max-h-[640px] overflow-y-auto rounded-xl border">
+          <div aria-hidden className="bk-pattern sticky top-0 -z-10 -mb-[640px] h-[640px]" />
           <div className={cn(layout !== "hero" && "p-5")}>
             <BookingShell
               compact

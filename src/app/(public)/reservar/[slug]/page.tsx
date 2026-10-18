@@ -9,7 +9,7 @@ export default async function BookingPage({ params }: PageProps<"/reservar/[slug
   const supabase = await createClient();
 
   const { data: business } = await supabase
-    .from("businesses").select("id, name, currency, theme, brand_color, layout, card_style, tagline, description, phone, address, logo_url").eq("slug", slug).maybeSingle();
+    .from("businesses").select("id, name, currency, theme, brand_color, layout, card_style, pattern, tagline, description, phone, address, logo_url").eq("slug", slug).maybeSingle();
   if (!business) notFound();
 
   const [{ data: services }, { data: professionals }] = await Promise.all([
@@ -24,7 +24,8 @@ export default async function BookingPage({ params }: PageProps<"/reservar/[slug
   const layout = (business.layout in LAYOUTS ? business.layout : "classic") as LayoutKey;
 
   return (
-    <div style={themeStyle(business.theme, business.brand_color, business.card_style)} className="bk-backdrop min-h-screen">
+    <div style={themeStyle(business.theme, business.brand_color, business.card_style, business.pattern)} className="bk-backdrop relative isolate min-h-screen">
+      <div aria-hidden className="bk-pattern fixed inset-0 -z-10" />
       <BookingShell layout={layout} info={business}>
         <BookingForm
           businessId={business.id}

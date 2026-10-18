@@ -2,7 +2,6 @@
 
 import { useActionState, useEffect, useMemo, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,7 +21,7 @@ function Choice({ active, onClick, children }: { active: boolean; onClick: () =>
       type="button"
       onClick={onClick}
       className={cn(
-        "bk-card p-3 text-left text-sm transition hover:-translate-y-0.5",
+        "bk-card w-full p-4 text-left text-sm transition active:scale-[0.98]",
         active ? "!border-primary ring-2 ring-primary" : "hover:!border-primary/50"
       )}
     >
@@ -31,17 +30,16 @@ function Choice({ active, onClick, children }: { active: boolean; onClick: () =>
   );
 }
 
-function Step({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
-  return (
-    <section className="bk-card space-y-3 p-4 sm:p-5">
-      <h2 className="flex items-center gap-2 font-semibold">
-        <span className="flex size-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">{n}</span>
-        {title}
-      </h2>
-      {children}
-    </section>
-  );
-}
+const STEPS = ["Servicio", "Profesional", "Fecha y hora", "Tus datos"];
+const DAYS_AHEAD = 21;
+
+const dayList = () =>
+  Array.from({ length: DAYS_AHEAD }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    return d;
+  });
+const ymd = (d: Date) => d.toLocaleDateString("en-CA");
 
 const googleCalUrl = (title: string, startsAt: string, endsAt: string) => {
   const f = (iso: string) => new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
@@ -58,8 +56,14 @@ export function BookingForm({
   const [slots, setSlots] = useState<Slot[] | null>(null);
   const [startsAt, setStartsAt] = useState("");
   const [loading, startLoading] = useTransition();
+  const [step, setStep] = useState(0);
+  const days = useMemo(() => dayList(), []);
+
+  // Cada paso empieza arriba para que no se quede a medio scroll en el móvil
+  const goTo = (n: number) => { setStep(n); window.scrollTo({ top: 0, behavior: "smooth" }); };
 
   const service = services.find((s) => s.id === serviceId);
+  const pro = professionals.find((p) => p.id === proId);
   const available = useMemo(
     () => professionals.filter((p) => links.some((l) => l.professional_id === p.id && l.service_id === serviceId)),
     [professionals, links, serviceId]
@@ -76,7 +80,6 @@ export function BookingForm({
   }, [businessId, serviceId, proId, date]);
 
   if (state?.ok) {
-    const pro = professionals.find((p) => p.id === proId);
     return (
       <div className="bk-card space-y-4 p-6 text-center">
         <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-primary text-2xl text-primary-foreground">✓</div>
@@ -103,68 +106,143 @@ export function BookingForm({
 
   const fe = state && !state.ok ? state.fieldErrors : undefined;
 
+  const chooseService = (id: string) => {
+    setServiceId(id); setSlots(null); setStartsAt("");
+    const pros = professionals.filter((p) => links.some((l) => l.professional_id === p.id && l.service_id === id));
+    // Con un único profesional no hace falta preguntar
+    if (pros.length === 1) { setProId(pros[0].id); goTo(2); } else { setProId(""); goTo(1); }
+  };
+  const choosePro = (id: string) => { setProId(id); setSlots(null); setStartsAt(""); goTo(2); };
+  const chooseSlot = (iso: string) => { setStartsAt(iso); goTo(3); };
+  const back = () => goTo(step === 2 && available.length === 1 ? 0 : step - 1);
+
   return (
-    <form action={action} className="space-y-6">
+    <form action={action} className="pb-24">
       <input type="hidden" name="businessId" value={businessId} />
       <input type="hidden" name="serviceId" value={serviceId} />
       <input type="hidden" name="professionalId" value={proId} />
       <input type="hidden" name="startsAt" value={startsAt} />
 
-      <Step n={1} title="Servicio">
-        <div className="grid gap-2 sm:grid-cols-2">
+      <div className="bk-card mb-4 space-y-3 p-4">
+        <div className="flex items-center gap-2">
+          {step > 0 && (
+            <button type="button" onClick={back} aria-label="Volver" className="flex size-9 items-center justify-center rounded-full border text-lg hover:bg-muted">←</button>
+          )}
+          <div className="flex-1">
+            <div className="text-xs text-muted-foreground">Paso {step + 1} de {STEPS.length}</div>
+            <h2 className="font-semibold">{STEPS[step]}</h2>
+          </div>
+        </div>
+        <div className="flex gap-1.5">
+          {STEPS.map((_, i) => (
+            <div key={i} className={cn("h-1.5 flex-1 rounded-full transition-colors", i <= step ? "bg-primary" : "bg-muted")} />
+          ))}
+        </div>
+        {step > 0 && (
+          <div className="flex flex-wrap gap-1.5 text-xs">
+            {service && <button type="button" onClick={() => goTo(0)} className="rounded-full border px-2.5 py-1">{service.name} ✎</button>}
+            {pro && step > 1 && <button type="button" onClick={() => goTo(1)} className="rounded-full border px-2.5 py-1">{pro.name} ✎</button>}
+            {startsAt && step > 2 && (
+              <button type="button" onClick={() => goTo(2)} className="rounded-full border px-2.5 py-1 capitalize">
+                {new Date(startsAt).toLocaleString("es-ES", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })} ✎
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {step === 0 && (
+        <div className="grid gap-3">
           {services.map((s) => (
-            <Choice key={s.id} active={s.id === serviceId} onClick={() => { setServiceId(s.id); setProId(""); setSlots(null); setStartsAt(""); }}>
-              <div className="font-medium">{s.name}</div>
-              <div className="mt-0.5 flex justify-between text-muted-foreground">
-                <span>{s.duration_min} min</span><span className="font-semibold text-primary">{money(Number(s.price), currency)}</span>
+            <Choice key={s.id} active={s.id === serviceId} onClick={() => chooseService(s.id)}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-base font-medium">{s.name}</div>
+                  {s.description && <div className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{s.description}</div>}
+                  <div className="mt-1 text-xs text-muted-foreground">{s.duration_min} min</div>
+                </div>
+                <div className="shrink-0 text-base font-semibold text-primary">{money(Number(s.price), currency)}</div>
               </div>
             </Choice>
           ))}
           {services.length === 0 && <p className="text-sm text-muted-foreground">Este negocio aún no tiene servicios.</p>}
         </div>
-      </Step>
-
-      {service && (
-        <Step n={2} title="Profesional">
-          <div className="grid gap-2 sm:grid-cols-2">
-            {available.map((p) => (
-              <Choice key={p.id} active={p.id === proId} onClick={() => { setProId(p.id); setSlots(null); setStartsAt(""); }}>
-                {p.name}
-              </Choice>
-            ))}
-            {available.length === 0 && <p className="text-sm text-muted-foreground">No hay profesionales para este servicio.</p>}
-          </div>
-        </Step>
       )}
 
-      {proId && (
-        <Step n={3} title="Fecha y hora">
-          <Input type="date" min={today()} value={date} onChange={(e) => setDate(e.target.value)} className="max-w-48" />
+      {step === 1 && (
+        <div className="grid gap-3">
+          {available.map((p) => (
+            <Choice key={p.id} active={p.id === proId} onClick={() => choosePro(p.id)}>
+              <div className="flex items-center gap-3">
+                <span className="flex size-10 items-center justify-center rounded-full bg-primary text-base font-semibold text-primary-foreground">
+                  {p.name.trim().charAt(0).toUpperCase()}
+                </span>
+                <span className="text-base font-medium">{p.name}</span>
+              </div>
+            </Choice>
+          ))}
+          {available.length === 0 && <p className="text-sm text-muted-foreground">No hay profesionales para este servicio.</p>}
+        </div>
+      )}
+
+      {step === 2 && (
+        <div className="space-y-4">
+          <div className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1">
+            {days.map((d) => {
+              const v = ymd(d);
+              const active = v === date;
+              return (
+                <button
+                  key={v} type="button" onClick={() => setDate(v)}
+                  className={cn("bk-card min-w-16 shrink-0 snap-start px-2 py-2 text-center", active && "!border-primary !bg-primary text-primary-foreground")}
+                >
+                  <div className="text-xs capitalize">{d.toLocaleDateString("es-ES", { weekday: "short" })}</div>
+                  <div className="text-lg font-bold">{d.getDate()}</div>
+                  <div className="text-xs capitalize">{d.toLocaleDateString("es-ES", { month: "short" })}</div>
+                </button>
+              );
+            })}
+          </div>
           {loading && <p className="text-sm text-muted-foreground">Buscando huecos…</p>}
-          {!loading && slots?.length === 0 && <p className="text-sm text-muted-foreground">No hay huecos este día.</p>}
-          <div className="flex flex-wrap gap-2">
-            {slots?.map((s) => (
-              <Button key={s.iso} type="button" size="sm" variant={s.iso === startsAt ? "default" : "outline"} onClick={() => setStartsAt(s.iso)}>
-                {s.label}
-              </Button>
+          {!loading && slots?.length === 0 && <p className="bk-card p-4 text-sm text-muted-foreground">No hay huecos este día. Prueba con otro.</p>}
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+            {slots?.map((sl) => (
+              <button
+                key={sl.iso} type="button" onClick={() => chooseSlot(sl.iso)}
+                className={cn("bk-card py-3 text-center text-sm font-medium transition hover:!border-primary", sl.iso === startsAt && "!border-primary ring-2 ring-primary")}
+              >
+                {sl.label}
+              </button>
             ))}
           </div>
-        </Step>
+        </div>
       )}
 
-      {startsAt && (
-        <Step n={4} title="Tus datos">
-          <div className="space-y-1"><Label htmlFor="name">Nombre</Label><Input id="name" name="name" required />
+      {/* Siempre montado (oculto) para no perder lo escrito al volver atrás */}
+      <div className={cn("space-y-3", step !== 3 && "hidden")}>
+        <div className="bk-card space-y-3 p-4">
+          <div className="space-y-1"><Label htmlFor="name">Nombre</Label><Input id="name" name="name" required autoComplete="name" className="h-11" />
             {fe?.name && <p className="text-xs text-destructive">{fe.name[0]}</p>}</div>
-          <div className="space-y-1"><Label htmlFor="phone">Teléfono (WhatsApp/SMS)</Label><Input id="phone" name="phone" type="tel" placeholder="+34600000000" required />
+          <div className="space-y-1"><Label htmlFor="phone">Teléfono (WhatsApp/SMS)</Label><Input id="phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="+34600000000" required className="h-11" />
             {fe?.phone && <p className="text-xs text-destructive">{fe.phone[0]}</p>}</div>
-          <div className="space-y-1"><Label htmlFor="email">Email (opcional)</Label><Input id="email" name="email" type="email" /></div>
+          <div className="space-y-1"><Label htmlFor="email">Email (opcional)</Label><Input id="email" name="email" type="email" autoComplete="email" className="h-11" /></div>
           <div className="space-y-1"><Label htmlFor="notes">Notas (opcional)</Label><Textarea id="notes" name="notes" maxLength={500} /></div>
-          {state && !state.ok && <p className="text-sm text-destructive">{state.error}</p>}
-          <Button type="submit" size="lg" className="w-full" disabled={pending}>
-            {pending ? "Reservando…" : "Confirmar reserva"}
-          </Button>
-        </Step>
+        </div>
+        {state && !state.ok && <p className="text-sm text-destructive">{state.error}</p>}
+      </div>
+
+      {step === 3 && (
+        <div className="fixed inset-x-0 bottom-0 z-10 border-t bg-background/95 p-3 backdrop-blur">
+          <div className="mx-auto flex max-w-2xl items-center gap-3">
+            <div className="text-xs leading-tight">
+              <div className="font-semibold">{service?.name}</div>
+              <div className="text-muted-foreground">{money(Number(service?.price ?? 0), currency)}</div>
+            </div>
+            <Button type="submit" size="lg" className="h-12 flex-1" disabled={pending || !startsAt}>
+              {pending ? "Reservando…" : "Confirmar reserva"}
+            </Button>
+          </div>
+        </div>
       )}
     </form>
   );
