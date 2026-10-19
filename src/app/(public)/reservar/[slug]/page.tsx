@@ -37,12 +37,12 @@ export default async function BookingPage({ params }: PageProps<"/reservar/[slug
                 <li key={t.stamps}><strong>{t.stamps} sellos</strong> → {t.description}</li>
               ))}
             </ul>
-            <a href={`/mi-tarjeta?negocio=${slug}`} className="mt-3 inline-flex min-h-11 items-center text-sm font-medium text-primary underline">Ver mi tarjeta de sellos</a>
           </section>
         )}
         <BookingForm
           businessId={business.id}
           businessName={business.name}
+          slug={slug}
           currency={business.currency}
           services={services ?? []}
           tiers={tiers}

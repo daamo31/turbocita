@@ -59,6 +59,10 @@ export function SignupForm({ rootDomain }: { rootDomain: string | null }) {
       </div>
       <div className="space-y-2"><Label htmlFor="e2">Email</Label><Input id="e2" name="email" type="email" required /></div>
       <div className="space-y-2"><Label htmlFor="p2">Contraseña</Label><Input id="p2" name="password" type="password" minLength={8} required /></div>
+      <label className="flex min-h-11 items-start gap-3 text-sm">
+        <input type="checkbox" name="consent" required className="mt-0.5 size-5 shrink-0" />
+        <span>Acepto la <a href="/privacidad" target="_blank" rel="noreferrer" className="font-medium underline">Política de Privacidad</a> de TurboCita.</span>
+      </label>
       <Button type="submit" variant="secondary" className="w-full" disabled={status === "taken" || status === "invalid"}>
         Registrarme
       </Button>

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, Gift, MoreHorizontal, Package, Palette, Receipt, Scissors, Users, X } from "lucide-react";
+import { CalendarDays, Gift, MoreHorizontal, Package, Palette, Receipt, Scissors, UserRound, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -11,6 +11,7 @@ const NAV = [
   { href: "/dashboard/servicios", label: "Servicios", icon: Scissors },
   { href: "/dashboard/equipo", label: "Equipo", icon: Users },
   { href: "/dashboard/fidelizacion", label: "Fidelización", icon: Gift },
+  { href: "/dashboard/clientes", label: "Clientes", icon: UserRound },
   { href: "/dashboard/inventario", label: "Inventario", icon: Package },
   { href: "/dashboard/facturacion", label: "Facturas", icon: Receipt },
   { href: "/dashboard/apariencia", label: "Apariencia", icon: Palette },

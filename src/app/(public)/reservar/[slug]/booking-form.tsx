@@ -88,8 +88,8 @@ const googleCalUrl = (title: string, startsAt: string, endsAt: string) => {
 };
 
 export function BookingForm({
-  businessId, businessName, currency, services, tiers,
-}: { businessId: string; businessName: string; currency: string; services: Service[]; tiers: StampTier[] }) {
+  businessId, businessName, slug, currency, services, tiers,
+}: { businessId: string; slug: string; businessName: string; currency: string; services: Service[]; tiers: StampTier[] }) {
   const [state, action, pending] = useActionState<BookingState, FormData>(createBooking, null);
   const [serviceIds, setServiceIds] = useState<string[]>([]);
   const [date, setDate] = useState(today());
@@ -154,7 +154,7 @@ export function BookingForm({
         </div>
         {stamps && tiers.length > 0 && (
           <div className="text-left">
-            <StampCard businessName={businessName} tiers={tiers} currentStamps={stamps.currentStamps} rewardsAvailable={stamps.rewardsAvailable} pendingVisit />
+            <StampCard businessName={businessName} tiers={tiers} currentStamps={stamps.currentStamps} rewardsAvailable={stamps.rewardsAvailable} upcoming={stamps.upcoming} />
           </div>
         )}
         <p className="text-xs text-muted-foreground">Si has facilitado tu teléfono recibirás un mensaje de confirmación.</p>
@@ -265,10 +265,19 @@ export function BookingForm({
             value={phone} onChange={(e) => { setPhone(e.target.value); setStamps(null); }} onBlur={lookupStamps} />
             {fe?.phone && <p className="text-xs text-destructive">{fe.phone[0]}</p>}</div>
           {stamps && tiers.length > 0 && (
-            <StampCard businessName={businessName} tiers={tiers} currentStamps={stamps.currentStamps} rewardsAvailable={stamps.rewardsAvailable} />
+            <StampCard businessName={businessName} tiers={tiers} currentStamps={stamps.currentStamps} rewardsAvailable={stamps.rewardsAvailable} upcoming={stamps.upcoming} pendingVisit />
           )}
           <div className="space-y-1"><Label htmlFor="email">Email (opcional)</Label><Input id="email" name="email" type="email" autoComplete="email" className="h-11" /></div>
           <div className="space-y-1"><Label htmlFor="notes">Notas (opcional)</Label><Textarea id="notes" name="notes" maxLength={500} /></div>
+          {/* Desmarcada por defecto: el consentimiento debe ser un acto explícito */}
+          <label className="flex min-h-11 items-start gap-3 rounded-lg border p-3 text-sm">
+            <input type="checkbox" name="consent" required className="mt-0.5 size-5 shrink-0" />
+            <span>
+              Acepto la <a href={`/privacidad/${slug}`} target="_blank" rel="noreferrer" className="font-medium text-primary underline">Política de Privacidad</a> y
+              el tratamiento de mis datos personales para gestionar mi cita y recibir avisos de confirmación y recordatorio.
+            </span>
+          </label>
+          {fe?.consent && <p className="text-xs text-destructive">{fe.consent[0]}</p>}
         </div>
         {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
           <>

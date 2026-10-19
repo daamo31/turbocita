@@ -8,7 +8,9 @@ interface Props {
   tiers: StampTier[];
   currentStamps: number;
   rewardsAvailable: number;
-  // Reserva recién hecha: la casilla siguiente se sellará al completar la cita
+  // Citas ya reservadas que sellarán al completarse
+  upcoming?: number;
+  // La reserva que se está haciendo ahora (aún sin confirmar)
   pendingVisit?: boolean;
   className?: string;
 }
@@ -37,7 +39,7 @@ function Confetti() {
 }
 
 // Cartón de sellos: una casilla por sello, premios marcados, y celebración cuando hay premio disponible.
-export function StampCard({ businessName, tiers, currentStamps, rewardsAvailable, pendingVisit, className }: Props) {
+export function StampCard({ businessName, tiers, currentStamps, rewardsAvailable, upcoming = 0, pendingVisit, className }: Props) {
   const sorted = [...tiers]
     .map((t) => ({ ...t, description: t.description?.trim() || (t.discount_percent >= 100 ? "Servicio gratis" : `${t.discount_percent}% de descuento`) }))
     .sort((a, b) => a.stamps - b.stamps);
@@ -45,8 +47,9 @@ export function StampCard({ businessName, tiers, currentStamps, rewardsAvailable
   const filled = Math.min(currentStamps, total);
   const tierAt = new Map(sorted.map((t) => [t.stamps, t]));
   const next = sorted.find((t) => t.stamps > filled);
-  const pendingBox = pendingVisit ? filled + 1 : null;
-  const willWin = pendingBox !== null ? tierAt.get(pendingBox) : undefined;
+  const pendingCount = Math.min(upcoming + (pendingVisit ? 1 : 0), total - filled);
+  const lastPending = filled + pendingCount;
+  const willWin = pendingCount > 0 ? sorted.find((t) => t.stamps > filled && t.stamps <= lastPending) : undefined;
 
   return (
     <section
@@ -82,7 +85,8 @@ export function StampCard({ businessName, tiers, currentStamps, rewardsAvailable
           {Array.from({ length: total }, (_, i) => {
             const n = i + 1;
             const done = n <= filled;
-            const pending = n === pendingBox;
+            const pending = n > filled && n <= lastPending;
+            const isNew = pendingVisit && n === lastPending;
             const tier = tierAt.get(n);
             return (
               <li
@@ -92,10 +96,16 @@ export function StampCard({ businessName, tiers, currentStamps, rewardsAvailable
                   done && "border-primary bg-primary/10",
                   !done && !tier && "border-dashed border-muted-foreground/30 text-muted-foreground/60",
                   !done && tier && "border-amber-400 bg-amber-50 text-amber-700 dark:bg-amber-400/10 dark:text-amber-300",
-                  pending && "stamp-pending border-solid !border-primary"
+                  pending && "stamp-pending border-solid !border-primary bg-primary/15 text-primary ring-2 ring-primary/40",
+                  isNew && "ring-4 ring-primary/50"
                 )}
               >
-                {done ? (
+                {pending && !done ? (
+                  <>
+                    <Star className="size-1/2" />
+                    <span className="mt-0.5 text-[9px] font-extrabold uppercase leading-none">{isNew ? "Esta" : "Reserva"}</span>
+                  </>
+                ) : done ? (
                   <span
                     className="stamp-in flex size-4/5 items-center justify-center rounded-full border-2 border-primary text-primary"
                     style={{ ["--d" as string]: `${i * 60}ms`, ["--stamp-rot" as string]: `${(i % 3 - 1) * 7}deg` }}
@@ -124,13 +134,19 @@ export function StampCard({ businessName, tiers, currentStamps, rewardsAvailable
           {willWin && (
             <p className="flex items-start gap-2 rounded-lg bg-amber-100 p-2.5 font-semibold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">
               <Sparkles className="mt-0.5 size-4 shrink-0" />
-              ¡Al completar esta visita ganas: {willWin.description}!
+              ¡Al completar la visita ganas: {willWin.description}!
+            </p>
+          )}
+          {pendingCount > 0 && (
+            <p className="font-medium text-primary">
+              {pendingVisit
+                ? upcoming > 0 ? `Con esta reserva y tus ${upcoming} pendiente${upcoming > 1 ? "s" : ""} sumarás ${pendingCount} sellos.` : "Al completar esta visita sumarás un sello."
+                : `Tienes ${upcoming} cita${upcoming > 1 ? "s" : ""} reservada${upcoming > 1 ? "s" : ""}: se sellará${upcoming > 1 ? "n" : ""} al completarla${upcoming > 1 ? "s" : ""}.`}
             </p>
           )}
           {!willWin && next && (
             <p className="text-muted-foreground">
-              {pendingVisit ? "Con esta visita sumarás un sello. " : ""}
-              {next.stamps - filled === 1 ? "Te falta 1 sello" : `Te faltan ${next.stamps - filled} sellos`} para <strong className="text-foreground">{next.description}</strong>.
+              {next.stamps - filled === 1 ? "Te falta 1 sello" : `Te faltan ${next.stamps - filled} sellos`} (sin contar las reservas) para <strong className="text-foreground">{next.description}</strong>.
             </p>
           )}
           {!next && !willWin && rewardsAvailable === 0 && <p className="text-muted-foreground">¡Ciclo completado! Empieza uno nuevo en tu próxima visita.</p>}

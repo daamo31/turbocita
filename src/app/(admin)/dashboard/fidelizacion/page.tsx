@@ -3,26 +3,36 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { getContext } from "@/lib/auth";
-import { LoyaltyCard } from "@/components/loyalty-card";
+import { Input } from "@/components/ui/input";
+import Link from "next/link";
 import { deactivateLoyaltyProgram, saveLoyaltyProgram } from "./actions";
 import { TierEditor } from "./tier-editor";
 
 type Tier = { stamps: number; discount_percent: number; description: string };
 
-export default async function LoyaltyPage() {
-  const { supabase, business, role } = await getContext();
+const PAGE_SIZE = 25;
+
+export default async function LoyaltyPage({ searchParams }: { searchParams: Promise<{ q?: string; page?: string }> }) {
+  const sp = await searchParams;
+  const q = (sp.q ?? "").replace(/[,()%*\\]/g, " ").trim().slice(0, 40);
+  const page = Math.max(1, Number(sp.page) || 1);
+  const { supabase, role } = await getContext();
   const [{ data: program }, { data: services }] = await Promise.all([
     supabase.from("loyalty_programs").select("id, service_id, loyalty_tiers(stamps, discount_percent, description)").eq("is_active", true).maybeSingle(),
     supabase.from("services").select("id, name").eq("active", true).order("name"),
   ]);
-  const { data: cards } = program
-    ? await supabase
-        .from("client_loyalty_cards")
-        .select("id, current_stamps, total_rewards_earned, clients(name, phone), loyalty_rewards(id, discount_percent, description, status)")
-        .eq("program_id", program.id)
-        .order("updated_at", { ascending: false })
-        .limit(100)
-    : { data: [] };
+  let cardsQuery = supabase
+    .from("client_loyalty_cards")
+    .select("id, current_stamps, rewards_available, total_rewards_earned, clients!inner(name, phone)", { count: "exact" })
+    .eq("program_id", program?.id ?? "00000000-0000-0000-0000-000000000000")
+    .order("current_stamps", { ascending: false })
+    .order("updated_at", { ascending: false })
+    .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
+  if (q) cardsQuery = cardsQuery.or(`name.ilike.%${q}%,phone.ilike.%${q}%`, { referencedTable: "clients" });
+  const { data: cards, count } = program ? await cardsQuery : { data: [], count: 0 };
+  const pages = Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE));
+  const maxStamps = Math.max(1, ...((program?.loyalty_tiers as unknown as Tier[] | null) ?? []).map((t) => t.stamps));
+  const href = (p: number) => `?${new URLSearchParams({ ...(q ? { q } : {}), page: String(p) })}`;
 
   const tiers = [...((program?.loyalty_tiers as unknown as Tier[] | null) ?? [])].sort((a, b) => a.stamps - b.stamps);
 
@@ -57,25 +67,45 @@ export default async function LoyaltyPage() {
 
       {program && (
         <>
-          <h2 className="font-semibold">Clientes con tarjeta <Badge variant="secondary">{cards?.length ?? 0}</Badge></h2>
-          {(cards ?? []).length === 0 && <p className="text-sm text-muted-foreground">Los sellos aparecerán al completar citas.</p>}
-          <div className="grid gap-4 md:grid-cols-2">
-            {(cards ?? []).map((c) => {
-              const cl = c.clients as unknown as { name: string; phone: string };
-              return (
-                <div key={c.id} className="space-y-1">
-                  <div className="text-sm font-medium">{cl.name} · {cl.phone}</div>
-                  <LoyaltyCard
-                    businessName={business.name}
-                    tiers={tiers}
-                    currentStamps={c.current_stamps}
-                    rewards={(c.loyalty_rewards as unknown as { id: string; discount_percent: number; description: string; status: string }[]).filter((r) => r.status === "available")}
-                    totalRewardsEarned={c.total_rewards_earned}
-                  />
-                </div>
-              );
-            })}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-semibold">Clientes con tarjeta <Badge variant="secondary">{count ?? 0}</Badge></h2>
+            <form className="flex gap-2">
+              <Input name="q" defaultValue={q} placeholder="Buscar nombre o teléfono" className="h-11 w-full sm:w-64 md:h-8" />
+              <Button type="submit" variant="outline">Buscar</Button>
+            </form>
           </div>
+          {(cards ?? []).length === 0 && <p className="text-sm text-muted-foreground">{q ? "Sin resultados." : "Los sellos aparecerán al completar citas."}</p>}
+          <Card>
+            <ul className="divide-y">
+              {(cards ?? []).map((c) => {
+                const cl = c.clients as unknown as { name: string; phone: string };
+                return (
+                  <li key={c.id} className="flex items-center gap-3 p-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium">{cl.name}</div>
+                      <div className="truncate text-xs text-muted-foreground">{cl.phone}</div>
+                    </div>
+                    <div className="w-24 shrink-0 sm:w-40">
+                      <div className="flex items-center justify-between text-xs tabular-nums">
+                        <span className="font-semibold">{c.current_stamps}/{maxStamps}</span>
+                        {c.rewards_available > 0 && <Badge className="bg-amber-400 text-white">🎁 {c.rewards_available}</Badge>}
+                      </div>
+                      <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+                        <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, (c.current_stamps / maxStamps) * 100)}%` }} />
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </Card>
+          {pages > 1 && (
+            <div className="flex items-center justify-between text-sm">
+              {page > 1 ? <Link href={href(page - 1)} className="inline-flex min-h-11 items-center text-primary underline">← Anterior</Link> : <span />}
+              <span className="text-muted-foreground">Página {page} de {pages}</span>
+              {page < pages ? <Link href={href(page + 1)} className="inline-flex min-h-11 items-center text-primary underline">Siguiente →</Link> : <span />}
+            </div>
+          )}
         </>
       )}
     </div>

@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export type LoyaltyStatus = {
   currentStamps: number;
   rewardsAvailable: number;
+  upcoming: number;
   nextStamps: number | null;
   nextDescription: string | null;
   maxStamps: number;
@@ -30,11 +31,12 @@ export async function getLoyaltyStatus(input: z.input<typeof schema>): Promise<L
 
   const { data } = await db
     .rpc("loyalty_status_by_phone", { p_business: parsed.data.businessId, p_phone: parsed.data.phone })
-    .maybeSingle<{ current_stamps: number; rewards_available: number; next_stamps: number | null; next_description: string | null; max_stamps: number }>();
+    .maybeSingle<{ current_stamps: number; rewards_available: number; upcoming: number; next_stamps: number | null; next_description: string | null; max_stamps: number }>();
   if (!data) return null;
   return {
     currentStamps: data.current_stamps,
     rewardsAvailable: data.rewards_available,
+    upcoming: data.upcoming,
     nextStamps: data.next_stamps,
     nextDescription: data.next_description,
     maxStamps: data.max_stamps,

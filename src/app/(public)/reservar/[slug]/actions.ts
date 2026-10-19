@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { PRIVACY_VERSION } from "@/lib/privacy";
 import { sendBookingConfirmation } from "@/lib/notifications/twilio";
 
 const bookingSchema = z.object({
@@ -13,6 +14,7 @@ const bookingSchema = z.object({
   phone: z.string().trim().regex(/^\+?[0-9 ()-]{7,20}$/, "Teléfono no válido"),
   email: z.string().trim().email().optional().or(z.literal("")),
   notes: z.string().trim().max(500).optional(),
+  consent: z.literal("on", { message: "Debes aceptar la Política de Privacidad" }),
 });
 
 // Cloudflare Turnstile (opcional): se exige solo si TURNSTILE_SECRET_KEY está configurada
@@ -83,6 +85,14 @@ export async function createBooking(_prev: BookingState, formData: FormData): Pr
     const key = Object.keys(ERRORS).find((k) => error?.message.includes(k));
     if (!key) console.error("create_public_booking", error);
     return { ok: false, error: key ? ERRORS[key] : "No se pudo crear la reserva. Inténtalo de nuevo." };
+  }
+
+  // Prueba del consentimiento (fecha y versión del texto aceptado)
+  const { data: appt } = await supabase.from("appointments").select("client_id").eq("id", data.appointment_id).single();
+  if (appt) {
+    await supabase.from("clients")
+      .update({ privacy_consent_at: new Date().toISOString(), privacy_consent_version: PRIVACY_VERSION })
+      .eq("id", appt.client_id);
   }
 
   // La notificación no debe romper una reserva ya creada

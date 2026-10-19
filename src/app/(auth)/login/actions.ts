@@ -32,6 +32,7 @@ export async function signUp(formData: FormData) {
   if (name.length < 2) failSignup("Indica el nombre del negocio");
   const slugErr = slugError(slug);
   if (slugErr) failSignup(slugErr);
+  if (formData.get("consent") !== "on") failSignup("Debes aceptar la Política de Privacidad");
   if (password.length < 8) failSignup("La contraseña debe tener al menos 8 caracteres");
   if (!(await checkSlug(slug))) failSignup("Esa dirección ya está en uso. Elige otra.");
 
