@@ -36,7 +36,7 @@ npm run dev                  # http://localhost:3000
 
 ## Base de datos y migraciones
 
-Las migraciones están en [supabase/migrations](supabase/migrations) (`0001` a `0012`). Usan la Supabase CLI, ya incluida como dependencia de desarrollo.
+Las migraciones están en [supabase/migrations](supabase/migrations) (`0001` a `0014`). Usan la Supabase CLI, ya incluida como dependencia de desarrollo.
 
 ```bash
 # Con sesión iniciada (npx supabase login) y proyecto enlazado
