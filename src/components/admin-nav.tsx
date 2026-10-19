@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, Package, Palette, Receipt, Scissors, Users } from "lucide-react";
+import { CalendarDays, Package, Palette, Receipt, Scissors, Gift, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -10,6 +10,7 @@ const NAV = [
   { href: "/dashboard/servicios", label: "Servicios", icon: Scissors },
   { href: "/dashboard/equipo", label: "Equipo", icon: Users },
   { href: "/dashboard/inventario", label: "Inventario", icon: Package },
+  { href: "/dashboard/fidelizacion", label: "Fidelidad", icon: Gift },
   { href: "/dashboard/facturacion", label: "Facturas", icon: Receipt },
   { href: "/dashboard/apariencia", label: "Apariencia", icon: Palette },
 ] as const;
@@ -26,7 +27,7 @@ export function AdminNav() {
         aria-label="Navegación principal"
         className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
       >
-        <ul className="grid grid-cols-6">
+        <ul className="grid grid-cols-7">
           {NAV.map(({ href, label, icon: Icon }) => (
             <li key={href}>
               <Link

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getContext } from "@/lib/auth";
 import { setAppointmentStatus } from "./actions";
+import { CompleteDialog } from "./complete-dialog";
 
 const LABEL: Record<string, string> = {
   pending: "Pendiente", confirmed: "Confirmada", completed: "Completada", cancelled: "Cancelada", no_show: "No asistió",
@@ -35,8 +36,16 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
 
   const { data: appts } = await supabase
     .from("appointments")
-    .select("id, starts_at, ends_at, status, notes, clients(name, phone), professionals(name), services(name), appointment_services(name, position)")
+    .select("id, client_id, service_id, starts_at, ends_at, status, notes, reward_redeemed, reward_discount_percent, clients(name, phone), professionals(name), services(name), appointment_services(name, position, service_id)")
     .gte("starts_at", from).lt("starts_at", to).order("starts_at");
+
+  const { data: program } = await supabase
+    .from("loyalty_programs").select("id, service_id, loyalty_tiers(stamps)").eq("is_active", true).maybeSingle();
+  const clientIds = [...new Set((appts ?? []).map((a) => a.client_id))];
+  const { data: cards } = program && clientIds.length
+    ? await supabase.from("client_loyalty_cards").select("client_id, current_stamps, loyalty_rewards(id, discount_percent, description, status)").eq("program_id", program.id).in("client_id", clientIds)
+    : { data: [] };
+  const cardByClient = new Map((cards ?? []).map((c) => [c.client_id, c]));
 
   // Resumen de los próximos 14 días desde hoy, para ver las reservas sin navegar día a día
   const [ty, tm, td] = todayLocal.split("-").map(Number);
@@ -133,6 +142,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
                 <div className="break-words text-sm text-muted-foreground">
                   {serviceLabel(a as ApptServices)} · {(a.professionals as unknown as { name: string }).name}
                   {a.notes && ` · ${a.notes}`}
+                  {a.reward_redeemed && ` · 🎁 Recompensa canjeada${a.reward_discount_percent ? ` (${a.reward_discount_percent}%)` : ""}`}
                 </div>
               </div>
               <Badge className="hidden md:inline-flex" variant={a.status === "cancelled" || a.status === "no_show" ? "destructive" : "secondary"}>{LABEL[a.status]}</Badge>
@@ -142,7 +152,22 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
                 {a.status === "pending" && <Button type="submit" size="xs" name="status" value="confirmed">Confirmar</Button>}
                 {(a.status === "pending" || a.status === "confirmed") && (
                   <>
-                    <Button type="submit" size="xs" variant="outline" name="status" value="completed">Completar</Button>
+                    <CompleteDialog
+                      appointmentId={a.id}
+                      clientName={c.name}
+                      serviceLabel={serviceLabel(a as ApptServices)}
+                      loyalty={
+                        program && (!program.service_id || a.service_id === program.service_id ||
+                          (a.appointment_services ?? []).some((s) => s.service_id === program.service_id))
+                          ? {
+                              requiredStamps: Math.max(...(program.loyalty_tiers as unknown as { stamps: number }[]).map((t) => t.stamps)),
+                              currentStamps: cardByClient.get(a.client_id)?.current_stamps ?? 0,
+                              rewards: ((cardByClient.get(a.client_id)?.loyalty_rewards ?? []) as unknown as { id: string; discount_percent: number; description: string; status: string }[])
+                                .filter((r) => r.status === "available"),
+                            }
+                          : null
+                      }
+                    />
                     <Button type="submit" size="xs" variant="destructive" name="status" value="cancelled">Cancelar</Button>
                   </>
                 )}
