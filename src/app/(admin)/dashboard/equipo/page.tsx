@@ -34,8 +34,8 @@ export default async function TeamPage() {
             </form>
           </div>
           <p className="text-center text-sm text-muted-foreground">
-            Es el número de citas que se pueden reservar a la misma hora. Con {n}, se pueden reservar {n} {n === 1 ? "cita" : "citas"} a las 11:00.
-            Si hoy hay menos gente, ajusta el número.
+            Es el máximo de citas simultáneas: cada profesional atiende una cita a la vez. Con {n}, a cualquier hora (no solo a las 11:00)
+            puede haber hasta {n} {n === 1 ? "cita" : "citas"} al mismo tiempo. Si hoy hay menos gente, ajusta el número.
           </p>
         </CardContent>
       </Card>
