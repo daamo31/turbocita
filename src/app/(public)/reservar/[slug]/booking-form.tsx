@@ -11,8 +11,6 @@ import { createBooking, type BookingState } from "./actions";
 import { getAvailableSlots, type Slot } from "./slots";
 
 type Service = { id: string; name: string; description: string | null; duration_min: number; price: number };
-type Pro = { id: string; name: string };
-type Link = { professional_id: string; service_id: string };
 
 const today = () => new Date().toLocaleDateString("en-CA"); // yyyy-mm-dd
 
@@ -31,7 +29,7 @@ function Choice({ active, onClick, children }: { active: boolean; onClick: () =>
   );
 }
 
-const STEPS = ["Servicio", "Profesional", "Fecha y hora", "Tus datos"];
+const STEPS = ["Servicio", "Fecha y hora", "Tus datos"];
 const MAX_DAYS_AHEAD = 90; // horizonte de reserva
 const ymd = (d: Date) => d.toLocaleDateString("en-CA");
 
@@ -88,11 +86,10 @@ const googleCalUrl = (title: string, startsAt: string, endsAt: string) => {
 };
 
 export function BookingForm({
-  businessId, businessName, currency, services, professionals, links,
-}: { businessId: string; businessName: string; currency: string; services: Service[]; professionals: Pro[]; links: Link[] }) {
+  businessId, businessName, currency, services,
+}: { businessId: string; businessName: string; currency: string; services: Service[] }) {
   const [state, action, pending] = useActionState<BookingState, FormData>(createBooking, null);
   const [serviceIds, setServiceIds] = useState<string[]>([]);
-  const [proId, setProId] = useState("");
   const [date, setDate] = useState(today());
   const [slots, setSlots] = useState<Slot[] | null>(null);
   const [startsAt, setStartsAt] = useState("");
@@ -108,23 +105,17 @@ export function BookingForm({
   const totalPrice = chosen.reduce((n, s) => n + Number(s.price), 0);
   const serviceNames = chosen.map((s) => s.name).join(" + ");
   const fmtDuration = (m: number) => (m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ""}` : `${m} min`);
-  const pro = professionals.find((p) => p.id === proId);
   const morning = (slots ?? []).filter((x) => x.label < "14:00");
   const afternoon = (slots ?? []).filter((x) => x.label >= "14:00");
-  const available = useMemo(
-    () => professionals.filter((p) => serviceIds.every((sid) => links.some((l) => l.professional_id === p.id && l.service_id === sid))),
-    [professionals, links, serviceIds]
-  );
-
   useEffect(() => {
-    if (serviceIds.length === 0 || !proId || !date) return;
+    if (serviceIds.length === 0 || !date) return;
     let cancelled = false;
     startLoading(async () => {
-      const res = await getAvailableSlots({ businessId, serviceIds, professionalId: proId, date });
+      const res = await getAvailableSlots({ businessId, serviceIds, date });
       if (!cancelled) { setSlots(res); setStartsAt(""); }
     });
     return () => { cancelled = true; };
-  }, [businessId, serviceIds, proId, date]);
+  }, [businessId, serviceIds, date]);
 
   if (state?.ok) {
     return (
@@ -132,7 +123,7 @@ export function BookingForm({
         <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-primary text-2xl text-primary-foreground">✓</div>
         <h2 className="bk-title text-2xl font-bold">¡Reserva confirmada!</h2>
         <div className="space-y-1 text-sm">
-          <p className="font-medium">{serviceNames} con {pro?.name}</p>
+          <p className="font-medium">{serviceNames}</p>
           <p className="text-lg font-semibold capitalize">
             {new Date(startsAt).toLocaleString("es-ES", { dateStyle: "full", timeStyle: "short" })}
           </p>
@@ -155,23 +146,16 @@ export function BookingForm({
 
   const toggleService = (id: string) => {
     setServiceIds((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
-    setProId(""); setSlots(null); setStartsAt("");
+    setSlots(null); setStartsAt("");
   };
-  const continueFromServices = () => {
-    if (serviceIds.length === 0) return;
-    const pros = professionals.filter((p) => serviceIds.every((sid) => links.some((l) => l.professional_id === p.id && l.service_id === sid)));
-    // Con un único profesional no hace falta preguntar
-    if (pros.length === 1) { setProId(pros[0].id); goTo(2); } else { setProId(""); goTo(1); }
-  };
-  const choosePro = (id: string) => { setProId(id); setSlots(null); setStartsAt(""); goTo(2); };
-  const chooseSlot = (iso: string) => { setStartsAt(iso); goTo(3); };
-  const back = () => goTo(step === 2 && available.length === 1 ? 0 : step - 1);
+  const continueFromServices = () => { if (serviceIds.length > 0) goTo(1); };
+  const chooseSlot = (iso: string) => { setStartsAt(iso); goTo(2); };
+  const back = () => goTo(step - 1);
 
   return (
     <form action={action} className="pb-24">
       <input type="hidden" name="businessId" value={businessId} />
       <input type="hidden" name="serviceIds" value={serviceIds.join(",")} />
-      <input type="hidden" name="professionalId" value={proId} />
       <input type="hidden" name="startsAt" value={startsAt} />
 
       <div className="bk-card mb-4 space-y-3 p-4">
@@ -192,9 +176,8 @@ export function BookingForm({
         {step > 0 && (
           <div className="flex flex-wrap gap-1.5 text-xs">
             {chosen.length > 0 && <button type="button" onClick={() => goTo(0)} className="max-w-full truncate rounded-full border px-2.5 py-1">{serviceNames} ✎</button>}
-            {pro && step > 1 && <button type="button" onClick={() => goTo(1)} className="rounded-full border px-2.5 py-1">{pro.name} ✎</button>}
-            {startsAt && step > 2 && (
-              <button type="button" onClick={() => goTo(2)} className="rounded-full border px-2.5 py-1 capitalize">
+            {startsAt && step > 1 && (
+              <button type="button" onClick={() => goTo(1)} className="rounded-full border px-2.5 py-1 capitalize">
                 {new Date(startsAt).toLocaleString("es-ES", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })} ✎
               </button>
             )}
@@ -228,22 +211,6 @@ export function BookingForm({
       )}
 
       {step === 1 && (
-        <div className="grid gap-3">
-          {available.map((p) => (
-            <Choice key={p.id} active={p.id === proId} onClick={() => choosePro(p.id)}>
-              <div className="flex items-center gap-3">
-                <span className="flex size-10 items-center justify-center rounded-full bg-primary text-base font-semibold text-primary-foreground">
-                  {p.name.trim().charAt(0).toUpperCase()}
-                </span>
-                <span className="text-base font-medium">{p.name}</span>
-              </div>
-            </Choice>
-          ))}
-          {available.length === 0 && <p className="text-sm text-muted-foreground">No hay profesionales para este servicio.</p>}
-        </div>
-      )}
-
-      {step === 2 && (
         <div className="space-y-4">
           <Calendar month={month} setMonth={setMonth} date={date} onPick={setDate} />
           {loading && <p className="text-sm text-muted-foreground">Buscando huecos…</p>}
@@ -270,7 +237,7 @@ export function BookingForm({
       )}
 
       {/* Siempre montado (oculto) para no perder lo escrito al volver atrás */}
-      <div className={cn("space-y-3", step !== 3 && "hidden")}>
+      <div className={cn("space-y-3", step !== 2 && "hidden")}>
         <div className="bk-card space-y-3 p-4">
           <div className="space-y-1"><Label htmlFor="name">Nombre</Label><Input id="name" name="name" required autoComplete="name" className="h-11" />
             {fe?.name && <p className="text-xs text-destructive">{fe.name[0]}</p>}</div>
@@ -288,7 +255,7 @@ export function BookingForm({
         {state && !state.ok && <p className="text-sm text-destructive">{state.error}</p>}
       </div>
 
-      {(step === 0 || step === 3) && (
+      {(step === 0 || step === 2) && (
         <div className="fixed inset-x-0 bottom-0 z-10 border-t bg-background/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur">
           <div className="mx-auto flex max-w-2xl items-center gap-3">
             <div className="min-w-0 text-xs leading-tight">

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getContext } from "@/lib/auth";
 
 const time = z.string().regex(/^\d{2}:\d{2}$/);
@@ -30,28 +31,19 @@ function toRows(professional_id: string, raw: unknown) {
   return rows;
 }
 
-export async function createProfessional(formData: FormData) {
-  const name = z.string().trim().min(2).max(80).safeParse(formData.get("name"));
-  if (!name.success) return;
-  const serviceIds = z.array(z.string().uuid()).parse(formData.getAll("services"));
+type Rows = { professional_id: string; weekday: number; start_time: string; end_time: string }[];
 
-  const { supabase, business } = await getContext();
-  // Validamos el horario antes de crear nada
-  const rows = toRows("00000000-0000-0000-0000-000000000000", formData.get("schedule"));
-  if (!rows) return;
-
-  const { data: pro, error } = await supabase
-    .from("professionals").insert({ business_id: business.id, name: name.data }).select("id").single();
-  if (error || !pro) return;
-
-  if (serviceIds.length)
-    await supabase.from("professional_services").insert(serviceIds.map((service_id) => ({ professional_id: pro.id, service_id })));
-  if (rows.length)
-    await supabase.from("working_hours").insert(rows.map((r) => ({ ...r, professional_id: pro.id })));
-  revalidatePath("/dashboard/equipo");
+// Horario general del negocio → se copia a todos los puestos (son intercambiables)
+async function applySchedule(supabase: SupabaseClient, proIds: string[], schedule: Record<string, { start: string; end: string }[]>) {
+  if (!proIds.length) return;
+  await supabase.from("working_hours").delete().in("professional_id", proIds);
+  const rows: Rows = proIds.flatMap((id) =>
+    Object.entries(schedule).flatMap(([day, ranges]) =>
+      ranges.map((r) => ({ professional_id: id, weekday: Number(day), start_time: r.start, end_time: r.end }))));
+  if (rows.length) await supabase.from("working_hours").insert(rows);
 }
 
-// Horario general del negocio (solo dueño): plantilla para nuevos profesionales
+// Horario del negocio (solo dueño): se aplica a todos los profesionales actuales y futuros
 export async function saveBusinessSchedule(formData: FormData) {
   const rows = toRows("x", formData.get("schedule")); // misma validación; el id no se usa
   if (!rows) return;
@@ -60,24 +52,33 @@ export async function saveBusinessSchedule(formData: FormData) {
   const schedule: Record<string, { start: string; end: string }[]> = {};
   for (const r of rows) (schedule[r.weekday] ??= []).push({ start: r.start_time, end: r.end_time });
   await supabase.from("businesses").update({ default_schedule: schedule }).eq("id", business.id);
+  const { data: pros } = await supabase.from("professionals").select("id").eq("business_id", business.id);
+  await applySchedule(supabase, (pros ?? []).map((p) => p.id), schedule);
   revalidatePath("/dashboard/equipo");
 }
 
-// Sustituye por completo el horario de un profesional (RLS limita a su negocio)
-export async function saveSchedule(formData: FormData) {
-  const id = z.string().uuid().parse(formData.get("id"));
-  const rows = toRows(id, formData.get("schedule"));
-  if (!rows) return;
-  const { supabase } = await getContext();
-  const { error: delErr } = await supabase.from("working_hours").delete().eq("professional_id", id);
-  if (delErr) return;
-  if (rows.length) await supabase.from("working_hours").insert(rows);
+// +1 profesional: reactiva un puesto antiguo si lo hay, si no crea "Profesional N"
+export async function addProfessional() {
+  const { supabase, business } = await getContext();
+  const { data: all } = await supabase.from("professionals").select("id, active").eq("business_id", business.id).order("created_at");
+  if ((all ?? []).filter((p) => p.active).length >= 50) return;
+  const old = (all ?? []).find((p) => !p.active);
+  if (old) {
+    await supabase.from("professionals").update({ active: true }).eq("id", old.id);
+  } else {
+    const { data: pro } = await supabase.from("professionals")
+      .insert({ business_id: business.id, name: `Profesional ${(all?.length ?? 0) + 1}` }).select("id").single();
+    const { data: biz } = await supabase.from("businesses").select("default_schedule").eq("id", business.id).single();
+    if (pro) await applySchedule(supabase, [pro.id], (biz?.default_schedule ?? {}) as Record<string, { start: string; end: string }[]>);
+  }
   revalidatePath("/dashboard/equipo");
 }
 
-export async function toggleProfessional(formData: FormData) {
-  const id = z.string().uuid().parse(formData.get("id"));
-  const { supabase } = await getContext();
-  await supabase.from("professionals").update({ active: formData.get("active") === "true" }).eq("id", id);
+// -1 profesional: desactiva el último puesto activo (se conserva el historial de citas y se reutiliza al añadir)
+export async function removeProfessional() {
+  const { supabase, business } = await getContext();
+  const { data: active } = await supabase.from("professionals").select("id").eq("business_id", business.id).eq("active", true).order("created_at", { ascending: false });
+  if (!active || active.length <= 1) return;
+  await supabase.from("professionals").update({ active: false }).eq("id", active[0].id);
   revalidatePath("/dashboard/equipo");
 }

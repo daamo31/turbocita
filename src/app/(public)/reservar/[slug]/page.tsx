@@ -12,14 +12,8 @@ export default async function BookingPage({ params }: PageProps<"/reservar/[slug
     .from("businesses").select("id, name, currency, theme, brand_color, layout, card_style, pattern, tagline, description, phone, address, logo_url").eq("slug", slug).maybeSingle();
   if (!business) notFound();
 
-  const [{ data: services }, { data: professionals }] = await Promise.all([
-    supabase.from("services").select("id, name, description, duration_min, price")
-      .eq("business_id", business.id).eq("active", true).order("name"),
-    supabase.from("professionals").select("id, name").eq("business_id", business.id).eq("active", true).order("name"),
-  ]);
-  const { data: links } = await supabase
-    .from("professional_services").select("professional_id, service_id")
-    .in("professional_id", (professionals ?? []).map((p) => p.id));
+  const { data: services } = await supabase.from("services").select("id, name, description, duration_min, price")
+    .eq("business_id", business.id).eq("active", true).order("name");
 
   const layout = (business.layout in LAYOUTS ? business.layout : "classic") as LayoutKey;
 
@@ -32,8 +26,6 @@ export default async function BookingPage({ params }: PageProps<"/reservar/[slug
           businessName={business.name}
           currency={business.currency}
           services={services ?? []}
-          professionals={professionals ?? []}
-          links={links ?? []}
         />
       </BookingShell>
     </div>
