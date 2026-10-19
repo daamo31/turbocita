@@ -8,7 +8,7 @@ Citas online, inventario y facturación para peluquerías y negocios locales. Mu
 
 - **Reservas públicas** en `/reservar/[slug]`: elección de uno o varios servicios (p. ej. corte + barba), profesional, fecha/hora y datos. Diseño pensado para móvil.
 - **Panel** (`/dashboard`): agenda, servicios (crear, activar/desactivar, eliminar), equipo y horarios, inventario, facturación y presupuestos con PDF, fidelización y apariencia (tema, logo, colores, dominio propio).
-- **Fidelización** (`/dashboard/fidelizacion`): programa de sellos con niveles de descuento (hasta 100 % = gratis), por servicio o general. Al completar una cita desde la agenda se suma un sello y se pueden canjear recompensas. Los clientes ven su tarjeta en `/mi-tarjeta`.
+- **Fidelización** (`/dashboard/fidelizacion`): programa de sellos con niveles de descuento (hasta 100 % = gratis), por servicio o general. Al completar una cita desde la agenda se suma un sello y se pueden canjear recompensas. Al reservar, el cliente ve sus sellos escribiendo solo su teléfono (sin cuenta ni correo; solo se muestran contadores, con límite de peticiones). Opcionalmente puede ver el detalle completo en `/mi-tarjeta` con un enlace por email.
 - **Notificaciones** opcionales por SMS/WhatsApp (Twilio) y archivo `.ics` para añadir la cita al calendario.
 - **Multi-tenant** con RLS: cada negocio solo ve sus datos. Subdominios `slug.tudominio.com` y dominios propios.
 
@@ -36,7 +36,7 @@ npm run dev                  # http://localhost:3000
 
 ## Base de datos y migraciones
 
-Las migraciones están en [supabase/migrations](supabase/migrations) (`0001` a `0014`). Usan la Supabase CLI, ya incluida como dependencia de desarrollo.
+Las migraciones están en [supabase/migrations](supabase/migrations) (`0001` a `0015`). Usan la Supabase CLI, ya incluida como dependencia de desarrollo.
 
 ```bash
 # Con sesión iniciada (npx supabase login) y proyecto enlazado

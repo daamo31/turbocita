@@ -9,6 +9,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn, money } from "@/lib/utils";
 import { createBooking, type BookingState } from "./actions";
 import { getAvailableSlots, type Slot } from "./slots";
+import { getLoyaltyStatus, type LoyaltyStatus } from "./loyalty";
+
+function StampsLine({ s }: { s: NonNullable<LoyaltyStatus> }) {
+  return (
+    <div role="status" className="rounded-lg border border-primary/40 bg-primary/5 p-3 text-sm">
+      <div className="font-semibold">🎁 Llevas {s.currentStamps} {s.currentStamps === 1 ? "sello" : "sellos"}</div>
+      {s.rewardsAvailable > 0 && (
+        <div className="text-primary">Tienes {s.rewardsAvailable} {s.rewardsAvailable === 1 ? "premio disponible" : "premios disponibles"}: díselo al negocio al llegar.</div>
+      )}
+      {s.nextStamps !== null && (
+        <div className="text-muted-foreground">Te faltan {s.nextStamps - s.currentStamps} para: {s.nextDescription}</div>
+      )}
+    </div>
+  );
+}
 
 type Service = { id: string; name: string; description: string | null; duration_min: number; price: number };
 
@@ -95,6 +110,12 @@ export function BookingForm({
   const [startsAt, setStartsAt] = useState("");
   const [loading, startLoading] = useTransition();
   const [step, setStep] = useState(0);
+  const [phone, setPhone] = useState("");
+  const [stamps, setStamps] = useState<LoyaltyStatus>(null);
+  const [, startStamps] = useTransition();
+  const lookupStamps = () => {
+    startStamps(async () => setStamps(await getLoyaltyStatus({ businessId, phone })));
+  };
   const [month, setMonth] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
 
   // Cada paso empieza arriba para que no se quede a medio scroll en el móvil
@@ -117,6 +138,13 @@ export function BookingForm({
     return () => { cancelled = true; };
   }, [businessId, serviceIds, date]);
 
+  // Tras reservar se vuelve a consultar: el sello de esta cita se suma al completarla
+  const confirmedId = state?.ok ? state.appointmentId : null;
+  useEffect(() => {
+    if (confirmedId) lookupStamps();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [confirmedId]);
+
   if (state?.ok) {
     return (
       <div className="bk-card space-y-4 p-6 text-center">
@@ -137,6 +165,7 @@ export function BookingForm({
             <Button type="button" variant="outline" className="w-full">Google Calendar</Button>
           </a>
         </div>
+        {stamps && <div className="text-left"><StampsLine s={stamps} /></div>}
         <p className="text-xs text-muted-foreground">Si has facilitado tu teléfono recibirás un mensaje de confirmación.</p>
       </div>
     );
@@ -241,8 +270,10 @@ export function BookingForm({
         <div className="bk-card space-y-3 p-4">
           <div className="space-y-1"><Label htmlFor="name">Nombre</Label><Input id="name" name="name" required autoComplete="name" className="h-11" />
             {fe?.name && <p className="text-xs text-destructive">{fe.name[0]}</p>}</div>
-          <div className="space-y-1"><Label htmlFor="phone">Teléfono (WhatsApp/SMS)</Label><Input id="phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="+34600000000" required className="h-11" />
+          <div className="space-y-1"><Label htmlFor="phone">Teléfono (WhatsApp/SMS)</Label><Input id="phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="+34600000000" required className="h-11"
+            value={phone} onChange={(e) => { setPhone(e.target.value); setStamps(null); }} onBlur={lookupStamps} />
             {fe?.phone && <p className="text-xs text-destructive">{fe.phone[0]}</p>}</div>
+          {stamps && <StampsLine s={stamps} />}
           <div className="space-y-1"><Label htmlFor="email">Email (opcional)</Label><Input id="email" name="email" type="email" autoComplete="email" className="h-11" /></div>
           <div className="space-y-1"><Label htmlFor="notes">Notas (opcional)</Label><Textarea id="notes" name="notes" maxLength={500} /></div>
         </div>
