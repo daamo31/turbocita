@@ -45,6 +45,7 @@ export default async function BookingPage({ params }: PageProps<"/reservar/[slug
           businessName={business.name}
           currency={business.currency}
           services={services ?? []}
+          tiers={tiers}
         />
       </BookingShell>
     </div>

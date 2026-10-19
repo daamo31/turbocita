@@ -10,20 +10,7 @@ import { cn, money } from "@/lib/utils";
 import { createBooking, type BookingState } from "./actions";
 import { getAvailableSlots, type Slot } from "./slots";
 import { getLoyaltyStatus, type LoyaltyStatus } from "./loyalty";
-
-function StampsLine({ s }: { s: NonNullable<LoyaltyStatus> }) {
-  return (
-    <div role="status" className="rounded-lg border border-primary/40 bg-primary/5 p-3 text-sm">
-      <div className="font-semibold">🎁 Llevas {s.currentStamps} {s.currentStamps === 1 ? "sello" : "sellos"}</div>
-      {s.rewardsAvailable > 0 && (
-        <div className="text-primary">Tienes {s.rewardsAvailable} {s.rewardsAvailable === 1 ? "premio disponible" : "premios disponibles"}: díselo al negocio al llegar.</div>
-      )}
-      {s.nextStamps !== null && (
-        <div className="text-muted-foreground">Te faltan {s.nextStamps - s.currentStamps} para: {s.nextDescription}</div>
-      )}
-    </div>
-  );
-}
+import { StampCard, type StampTier } from "@/components/stamp-card";
 
 type Service = { id: string; name: string; description: string | null; duration_min: number; price: number };
 
@@ -101,8 +88,8 @@ const googleCalUrl = (title: string, startsAt: string, endsAt: string) => {
 };
 
 export function BookingForm({
-  businessId, businessName, currency, services,
-}: { businessId: string; businessName: string; currency: string; services: Service[] }) {
+  businessId, businessName, currency, services, tiers,
+}: { businessId: string; businessName: string; currency: string; services: Service[]; tiers: StampTier[] }) {
   const [state, action, pending] = useActionState<BookingState, FormData>(createBooking, null);
   const [serviceIds, setServiceIds] = useState<string[]>([]);
   const [date, setDate] = useState(today());
@@ -165,7 +152,11 @@ export function BookingForm({
             <Button type="button" variant="outline" className="w-full">Google Calendar</Button>
           </a>
         </div>
-        {stamps && <div className="text-left"><StampsLine s={stamps} /></div>}
+        {stamps && tiers.length > 0 && (
+          <div className="text-left">
+            <StampCard businessName={businessName} tiers={tiers} currentStamps={stamps.currentStamps} rewardsAvailable={stamps.rewardsAvailable} pendingVisit />
+          </div>
+        )}
         <p className="text-xs text-muted-foreground">Si has facilitado tu teléfono recibirás un mensaje de confirmación.</p>
       </div>
     );
@@ -273,7 +264,9 @@ export function BookingForm({
           <div className="space-y-1"><Label htmlFor="phone">Teléfono (WhatsApp/SMS)</Label><Input id="phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="+34600000000" required className="h-11"
             value={phone} onChange={(e) => { setPhone(e.target.value); setStamps(null); }} onBlur={lookupStamps} />
             {fe?.phone && <p className="text-xs text-destructive">{fe.phone[0]}</p>}</div>
-          {stamps && <StampsLine s={stamps} />}
+          {stamps && tiers.length > 0 && (
+            <StampCard businessName={businessName} tiers={tiers} currentStamps={stamps.currentStamps} rewardsAvailable={stamps.rewardsAvailable} />
+          )}
           <div className="space-y-1"><Label htmlFor="email">Email (opcional)</Label><Input id="email" name="email" type="email" autoComplete="email" className="h-11" /></div>
           <div className="space-y-1"><Label htmlFor="notes">Notas (opcional)</Label><Textarea id="notes" name="notes" maxLength={500} /></div>
         </div>
