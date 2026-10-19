@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ExternalLink, LogOut } from "lucide-react";
 import { getContext } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { Tip } from "@/components/ui/tooltip";
 import { AdminNav } from "@/components/admin-nav";
 import { signOut } from "@/app/(auth)/login/actions";
 
@@ -17,21 +18,25 @@ export default async function AdminLayout({ children }: LayoutProps<"/dashboard"
             </span>
             <span className="truncate font-semibold tracking-tight">{business.name}</span>
           </span>
-          <Link
-            href={`/reservar/${business.slug}`}
-            target="_blank"
-            aria-label="Ver mi página de reservas"
-            className="inline-flex h-11 items-center gap-1.5 rounded-lg px-3 text-sm text-muted-foreground hover:bg-muted md:h-9"
-          >
-            <ExternalLink className="size-4" />
-            <span className="hidden sm:inline">/reservar/{business.slug}</span>
-            <span className="sm:hidden">Mi web</span>
-          </Link>
+          <Tip label="Abrir tu página pública de reservas">
+            <Link
+              href={`/reservar/${business.slug}`}
+              target="_blank"
+              aria-label="Ver mi página de reservas"
+              className="inline-flex h-11 items-center gap-1.5 rounded-lg px-3 text-sm text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground md:h-9"
+            >
+              <ExternalLink className="size-4" />
+              <span className="hidden sm:inline">/reservar/{business.slug}</span>
+              <span className="sm:hidden">Mi web</span>
+            </Link>
+          </Tip>
           <form action={signOut}>
-            <Button variant="outline" size="sm" aria-label="Cerrar sesión">
-              <LogOut className="size-4" />
-              <span className="hidden sm:inline">Salir</span>
-            </Button>
+            <Tip label="Cerrar sesión">
+              <Button variant="outline" size="sm" aria-label="Cerrar sesión">
+                <LogOut className="size-4" />
+                <span className="hidden sm:inline">Salir</span>
+              </Button>
+            </Tip>
           </form>
         </div>
       </header>

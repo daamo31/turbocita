@@ -212,3 +212,7 @@
 .admin-shell [data-slot="card"]:hover { box-shadow: 0 4px 14px oklch(0.2 0.05 277 / 0.08); }
 .admin-shell [data-slot="button"][type="submit"]:not([class*="variant"]) { transition: all 200ms; }
 .admin-shell label { font-weight: 500; }
+
+@keyframes step-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.step-enter { animation: step-enter 260ms ease-out both; }
+@media (prefers-reduced-motion: reduce) { .step-enter { animation: none; } }

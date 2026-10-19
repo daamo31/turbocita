@@ -22,7 +22,7 @@ function Choice({ active, onClick, children }: { active: boolean; onClick: () =>
       type="button"
       onClick={onClick}
       className={cn(
-        "bk-card w-full p-4 text-left text-sm transition active:scale-[0.98]",
+        "bk-card w-full p-4 text-left text-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98]",
         active ? "!border-primary ring-2 ring-primary" : "hover:!border-primary/50"
       )}
     >
@@ -135,8 +135,8 @@ export function BookingForm({
   if (state?.ok) {
     return (
       <div className="bk-card space-y-4 p-6 text-center">
-        <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-primary text-2xl text-primary-foreground">✓</div>
-        <h2 className="bk-title text-2xl font-bold">¡Reserva confirmada!</h2>
+        <div className="stamp-in mx-auto flex size-16 items-center justify-center rounded-full bg-primary text-3xl text-primary-foreground shadow-lg">✓</div>
+        <h2 className="bk-title text-2xl font-bold tracking-tight">¡Reserva confirmada!</h2>
         <div className="space-y-1 text-sm">
           <p className="font-medium">{serviceNames}</p>
           <p className="text-lg font-semibold capitalize">
@@ -206,7 +206,7 @@ export function BookingForm({
       </div>
 
       {step === 0 && (
-        <div className="grid gap-3">
+        <div className="step-enter grid gap-3">
           <p className="text-sm text-muted-foreground">Puedes elegir varios servicios (por ejemplo, corte + barba).</p>
           {services.map((s) => {
             const on = serviceIds.includes(s.id);
@@ -231,12 +231,25 @@ export function BookingForm({
       )}
 
       {step === 1 && (
-        <div className="space-y-4">
+        <div className="step-enter space-y-4">
           <Calendar month={month} setMonth={setMonth} date={date} onPick={setDate} />
-          {loading && <p className="text-sm text-muted-foreground">Buscando huecos…</p>}
-          {!loading && slots?.length === 0 && <p className="bk-card p-4 text-sm text-muted-foreground">No hay huecos este día. Prueba con otro.</p>}
+          {loading && (
+            <div className="space-y-2" role="status" aria-label="Buscando huecos">
+              <div className="h-3 w-16 animate-pulse rounded bg-muted" />
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                {Array.from({ length: 8 }, (_, i) => <div key={i} className="h-12 animate-pulse rounded-lg bg-muted" />)}
+              </div>
+            </div>
+          )}
+          {!loading && slots?.length === 0 && (
+            <div className="bk-card space-y-1 p-6 text-center">
+              <div className="text-2xl" aria-hidden>🗓️</div>
+              <p className="font-medium">No hay huecos este día</p>
+              <p className="text-sm text-muted-foreground">Prueba con otra fecha del calendario.</p>
+            </div>
+          )}
           {/* Horas agrupadas: cuadrícula de 3 columnas, sin scroll horizontal */}
-          {[["Mañana", morning], ["Tarde", afternoon]].map(([label, list]) =>
+          {!loading && [["Mañana", morning], ["Tarde", afternoon]].map(([label, list]) =>
             (list as Slot[]).length > 0 && (
               <div key={label as string} className="space-y-2">
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label as string}</h3>
@@ -307,7 +320,8 @@ export function BookingForm({
               </Button>
             ) : (
               <Button type="submit" size="lg" className="ml-auto h-12 shrink-0 px-6" disabled={pending || !startsAt}>
-                {pending ? "Reservando…" : "Confirmar"}
+                {pending && <span aria-hidden className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />}
+                {pending ? "Reservando…" : "Confirmar reserva"}
               </Button>
             )}
           </div>

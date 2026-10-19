@@ -1,5 +1,6 @@
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import Link from "next/link";
+import { CalendarX2 } from "lucide-react";
 import { TZDate } from "@date-fns/tz";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -70,6 +71,13 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
   const pendingList = (upcoming ?? []).filter((u) => u.status === "pending");
   const fmtDay = (iso: string) => new Date(iso).toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short", timeZone: tz });
 
+  const dayAppts = appts ?? [];
+  const stats = [
+    { label: "Citas del día", value: dayAppts.filter((a) => a.status !== "cancelled").length },
+    { label: "Por confirmar", value: dayAppts.filter((a) => a.status === "pending").length, warn: true },
+    { label: "Completadas", value: dayAppts.filter((a) => a.status === "completed").length },
+  ];
+
   const fmt = (iso: string) => new Date(iso).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", timeZone: tz });
 
   return (
@@ -85,6 +93,17 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
         </div>
       </div>
 
+      <div className="grid grid-cols-3 gap-3">
+        {stats.map((s) => (
+          <Card key={s.label} size="sm">
+            <CardContent className="space-y-0.5">
+              <div className={`text-2xl font-bold tabular-nums tracking-tight ${s.warn && s.value > 0 ? "text-amber-600" : ""}`}>{s.value}</div>
+              <div className="text-xs text-muted-foreground">{s.label}</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
       <div className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1">
         {days.map((day) => {
           const info = perDay.get(day);
@@ -93,7 +112,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
             <Link
               key={day}
               href={`?date=${day}`}
-              className={`min-w-16 shrink-0 snap-start rounded-lg border p-2 text-center text-xs transition-colors ${active ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+              className={`min-w-16 shrink-0 snap-start rounded-xl border p-2 text-center text-xs transition-all duration-200 ${active ? "border-primary bg-primary text-primary-foreground shadow-md" : "bg-card hover:-translate-y-0.5 hover:bg-muted hover:shadow-sm"}`}
             >
               <div className="capitalize">{new Date(day + "T12:00:00Z").toLocaleDateString("es-ES", { weekday: "short", timeZone: "UTC" })}</div>
               <div className="text-base font-bold">{day.slice(8)}</div>
@@ -127,7 +146,13 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
         </Card>
       )}
 
-      {(appts ?? []).length === 0 && <p className="text-muted-foreground">No hay citas este día.</p>}
+      {(appts ?? []).length === 0 && (
+        <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed py-12 text-center">
+          <CalendarX2 className="size-8 text-muted-foreground/60" aria-hidden />
+          <p className="font-medium">Sin citas este día</p>
+          <p className="text-sm text-muted-foreground">Las nuevas reservas aparecerán aquí automáticamente.</p>
+        </div>
+      )}
 
       {(appts ?? []).map((a) => {
         const c = a.clients as unknown as { name: string; phone: string };
