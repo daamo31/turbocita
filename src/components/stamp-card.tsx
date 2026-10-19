@@ -38,7 +38,9 @@ function Confetti() {
 
 // Cartón de sellos: una casilla por sello, premios marcados, y celebración cuando hay premio disponible.
 export function StampCard({ businessName, tiers, currentStamps, rewardsAvailable, pendingVisit, className }: Props) {
-  const sorted = [...tiers].sort((a, b) => a.stamps - b.stamps);
+  const sorted = [...tiers]
+    .map((t) => ({ ...t, description: t.description?.trim() || (t.discount_percent >= 100 ? "Servicio gratis" : `${t.discount_percent}% de descuento`) }))
+    .sort((a, b) => a.stamps - b.stamps);
   const total = sorted.at(-1)?.stamps ?? 1;
   const filled = Math.min(currentStamps, total);
   const tierAt = new Map(sorted.map((t) => [t.stamps, t]));
