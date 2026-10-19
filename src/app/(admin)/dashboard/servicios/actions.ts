@@ -12,7 +12,7 @@ const schema = z.object({
 
 export async function createService(formData: FormData) {
   const parsed = schema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return;
+  if (!parsed.success) return { ok: false, error: "Revisa el nombre, la duración y el precio." };
   const { supabase, business } = await getContext();
   await supabase.from("services").insert({ ...parsed.data, business_id: business.id });
   revalidatePath("/dashboard/servicios");

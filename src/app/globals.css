@@ -196,3 +196,19 @@
   .stamp-in, .stamp-pending, .gift-bounce, .reward-shine { animation: none; }
   .confetti-piece { display: none; }
 }
+
+/* Panel de administración: acento índigo, fondo con jerarquía y tarjetas con profundidad */
+.admin-shell {
+  --primary: oklch(0.511 0.23 277);
+  --primary-foreground: oklch(0.985 0 0);
+  --ring: oklch(0.585 0.2 277);
+  --muted: oklch(0.965 0.008 270);
+  --border: oklch(0.915 0.01 270);
+  background-image: radial-gradient(60rem 24rem at 50% -8rem, oklch(0.93 0.04 277 / 0.55), transparent);
+  background-color: oklch(0.985 0.004 270);
+}
+.admin-shell h1 { font-size: 1.5rem; line-height: 2rem; font-weight: 700; letter-spacing: -0.025em; }
+.admin-shell [data-slot="card"] { box-shadow: 0 1px 2px oklch(0.2 0.03 270 / 0.06), 0 1px 1px oklch(0.2 0.03 270 / 0.04); transition: box-shadow 200ms, transform 200ms; }
+.admin-shell [data-slot="card"]:hover { box-shadow: 0 4px 14px oklch(0.2 0.05 277 / 0.08); }
+.admin-shell [data-slot="button"][type="submit"]:not([class*="variant"]) { transition: all 200ms; }
+.admin-shell label { font-weight: 500; }

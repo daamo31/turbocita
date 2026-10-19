@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getContext } from "@/lib/auth";
 import { addProfessional, removeProfessional, saveBusinessSchedule } from "./actions";
@@ -22,16 +22,16 @@ export default async function TeamPage() {
         <CardHeader><CardTitle>Profesionales trabajando</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-center gap-6">
-            <form action={removeProfessional}>
-              <Button type="submit" variant="outline" size="lg" className="size-14 rounded-full text-2xl" disabled={n <= 1} aria-label="Quitar un profesional">−</Button>
-            </form>
+            <ActionForm action={removeProfessional} success="Profesional eliminado">
+              <SubmitButton variant="outline" size="lg" className="size-14 rounded-full text-2xl" disabled={n <= 1} aria-label="Quitar un profesional">−</SubmitButton>
+            </ActionForm>
             <div className="text-center">
               <div className="text-5xl font-bold tabular-nums">{n}</div>
               <div className="text-xs text-muted-foreground">{n === 1 ? "profesional" : "profesionales"}</div>
             </div>
-            <form action={addProfessional}>
-              <Button type="submit" size="lg" className="size-14 rounded-full text-2xl" aria-label="Añadir un profesional">+</Button>
-            </form>
+            <ActionForm action={addProfessional} success="Profesional añadido ✓">
+              <SubmitButton size="lg" className="size-14 rounded-full text-2xl" aria-label="Añadir un profesional">+</SubmitButton>
+            </ActionForm>
           </div>
           <p className="text-center text-sm text-muted-foreground">
             Es el máximo de citas simultáneas: cada profesional atiende una cita a la vez. Con {n}, a cualquier hora (no solo a las 11:00)
@@ -49,10 +49,10 @@ export default async function TeamPage() {
               <summary className="mb-3 flex min-h-11 cursor-pointer items-center text-sm text-muted-foreground">
                 {hasDefault ? "Es el horario de todos los profesionales. Pulsa para editarlo." : "Días y tramos en los que abres."}
               </summary>
-              <form action={saveBusinessSchedule} className="space-y-3">
+              <ActionForm action={saveBusinessSchedule} success="Horario guardado ✓" className="space-y-3">
                 <ScheduleEditor initial={defaultSchedule} />
-                <Button type="submit" className="w-full sm:w-auto">Guardar horario</Button>
-              </form>
+                <SubmitButton className="w-full sm:w-auto">Guardar horario</SubmitButton>
+              </ActionForm>
             </details>
           </CardContent>
         </Card>

@@ -1,3 +1,4 @@
+import { ActionForm } from "@/components/action-form";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
@@ -58,12 +59,12 @@ export default async function DocumentPage({ params }: PageProps<"/dashboard/fac
         </CardContent>
       </Card>
 
-      <form action={setDocumentStatus} className="grid grid-cols-3 gap-2 sm:flex">
+      <ActionForm action={setDocumentStatus} success="Estado del documento actualizado" className="grid grid-cols-3 gap-2 sm:flex">
         <input type="hidden" name="id" value={d.id} />
         {(["pending", "paid", "cancelled"] as const).map((st) => (
           <Button key={st} name="status" value={st} type="submit" variant={d.status === st ? "default" : "outline"}>{STATUS_LABEL[st]}</Button>
         ))}
-      </form>
+      </ActionForm>
     </div>
   );
 }

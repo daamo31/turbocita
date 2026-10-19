@@ -46,9 +46,9 @@ async function applySchedule(supabase: SupabaseClient, proIds: string[], schedul
 // Horario del negocio (solo dueño): se aplica a todos los profesionales actuales y futuros
 export async function saveBusinessSchedule(formData: FormData) {
   const rows = toRows("x", formData.get("schedule")); // misma validación; el id no se usa
-  if (!rows) return;
+  if (!rows) return { ok: false, error: "Horario no válido: revisa que los tramos no se solapen." };
   const { supabase, business, role } = await getContext();
-  if (role !== "owner") return;
+  if (role !== "owner") return { ok: false, error: "Solo el dueño puede cambiar el horario." };
   const schedule: Record<string, { start: string; end: string }[]> = {};
   for (const r of rows) (schedule[r.weekday] ??= []).push({ start: r.start_time, end: r.end_time });
   await supabase.from("businesses").update({ default_schedule: schedule }).eq("id", business.id);
@@ -61,7 +61,7 @@ export async function saveBusinessSchedule(formData: FormData) {
 export async function addProfessional() {
   const { supabase, business } = await getContext();
   const { data: all } = await supabase.from("professionals").select("id, active").eq("business_id", business.id).order("created_at");
-  if ((all ?? []).filter((p) => p.active).length >= 50) return;
+  if ((all ?? []).filter((p) => p.active).length >= 50) return { ok: false, error: "Has alcanzado el máximo de 50 profesionales." };
   const old = (all ?? []).find((p) => !p.active);
   if (old) {
     await supabase.from("professionals").update({ active: true }).eq("id", old.id);
@@ -78,7 +78,7 @@ export async function addProfessional() {
 export async function removeProfessional() {
   const { supabase, business } = await getContext();
   const { data: active } = await supabase.from("professionals").select("id").eq("business_id", business.id).eq("active", true).order("created_at", { ascending: false });
-  if (!active || active.length <= 1) return;
+  if (!active || active.length <= 1) return { ok: false, error: "Debe quedar al menos un profesional." };
   await supabase.from("professionals").update({ active: false }).eq("id", active[0].id);
   revalidatePath("/dashboard/equipo");
 }

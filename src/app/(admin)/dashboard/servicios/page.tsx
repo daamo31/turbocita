@@ -1,5 +1,5 @@
+import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,12 +19,12 @@ export default async function ServicesPage() {
       <Card>
         <CardHeader><CardTitle>Nuevo servicio</CardTitle></CardHeader>
         <CardContent>
-          <form action={createService} className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:items-end">
+          <ActionForm action={createService} success="Servicio creado ✓" className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:items-end">
             <div className="col-span-2 space-y-1 sm:col-span-1"><Label>Nombre</Label><Input name="name" required /></div>
             <div className="space-y-1"><Label>Duración (min)</Label><Input name="duration_min" type="number" min={5} defaultValue={30} required /></div>
             <div className="space-y-1"><Label>Precio</Label><Input name="price" type="number" step="0.01" min={0} required /></div>
-            <Button type="submit" className="col-span-2 sm:col-span-1">Añadir</Button>
-          </form>
+            <SubmitButton className="col-span-2 sm:col-span-1">Añadir</SubmitButton>
+          </ActionForm>
         </CardContent>
       </Card>
       {/* Móvil: tarjetas */}
@@ -39,15 +39,15 @@ export default async function ServicesPage() {
                   <Badge className="mt-1" variant={s.active ? "secondary" : "outline"}>{s.active ? "Activo" : "Inactivo"}</Badge>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <form action={toggleService}>
+                  <ActionForm action={toggleService} success="Estado del servicio actualizado">
                     <input type="hidden" name="id" value={s.id} />
                     <input type="hidden" name="active" value={String(!s.active)} />
-                    <Button type="submit" size="xs" variant="outline" className="w-full">{s.active ? "Desactivar" : "Activar"}</Button>
-                  </form>
-                  <form action={deleteService}>
+                    <SubmitButton size="xs" variant="outline" className="w-full">{s.active ? "Desactivar" : "Activar"}</SubmitButton>
+                  </ActionForm>
+                  <ActionForm action={deleteService} success="Servicio eliminado">
                   <input type="hidden" name="id" value={s.id} />
-                  <Button type="submit" size="xs" variant="destructive" className="w-full">Eliminar</Button>
-                </form>
+                  <SubmitButton size="xs" variant="destructive" className="w-full">Eliminar</SubmitButton>
+                </ActionForm>
                 </div>
               </CardContent>
             </Card>
@@ -67,15 +67,15 @@ export default async function ServicesPage() {
                 <TableCell>{money(Number(s.price), business.currency)}</TableCell>
                 <TableCell><Badge variant={s.active ? "secondary" : "outline"}>{s.active ? "Activo" : "Inactivo"}</Badge></TableCell>
                 <TableCell className="flex gap-2">
-                  <form action={toggleService}>
+                  <ActionForm action={toggleService} success="Estado del servicio actualizado">
                     <input type="hidden" name="id" value={s.id} />
                     <input type="hidden" name="active" value={String(!s.active)} />
-                    <Button type="submit" size="xs" variant="outline">{s.active ? "Desactivar" : "Activar"}</Button>
-                  </form>
-                  <form action={deleteService}>
+                    <SubmitButton size="xs" variant="outline">{s.active ? "Desactivar" : "Activar"}</SubmitButton>
+                  </ActionForm>
+                  <ActionForm action={deleteService} success="Servicio eliminado">
                   <input type="hidden" name="id" value={s.id} />
-                  <Button type="submit" size="xs" variant="destructive">Eliminar</Button>
-                </form>
+                  <SubmitButton size="xs" variant="destructive">Eliminar</SubmitButton>
+                </ActionForm>
                 </TableCell>
               </TableRow>
             ))}

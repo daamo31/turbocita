@@ -1,3 +1,4 @@
+import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,19 +48,19 @@ export default async function LoyaltyPage({ searchParams }: { searchParams: Prom
             {program && <p className="text-sm text-muted-foreground">Guardar uno nuevo sustituye al actual; las tarjetas ya creadas se conservan.</p>}
           </CardHeader>
           <CardContent>
-            <form action={saveLoyaltyProgram} className="grid gap-3 sm:grid-cols-2">
+            <ActionForm action={saveLoyaltyProgram} success="Programa de fidelización guardado ✓" className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1"><Label>Servicio aplicable</Label>
                 <select name="service_id" defaultValue={program?.service_id ?? ""} className="h-11 w-full rounded-lg border bg-background px-2.5 text-sm md:h-8">
                   <option value="">Todos los servicios</option>
                   {(services ?? []).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select></div>
               <TierEditor initial={tiers} />
-            </form>
+            </ActionForm>
             {program && (
-              <form action={deactivateLoyaltyProgram} className="mt-3">
+              <ActionForm action={deactivateLoyaltyProgram} success="Programa desactivado" className="mt-3">
                 <input type="hidden" name="id" value={program.id} />
-                <Button type="submit" variant="destructive" size="sm">Desactivar programa</Button>
-              </form>
+                <SubmitButton variant="destructive" size="sm">Desactivar programa</SubmitButton>
+              </ActionForm>
             )}
           </CardContent>
         </Card>

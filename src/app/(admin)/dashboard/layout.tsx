@@ -8,10 +8,15 @@ import { signOut } from "@/app/(auth)/login/actions";
 export default async function AdminLayout({ children }: LayoutProps<"/dashboard">) {
   const { business } = await getContext();
   return (
-    <div className="min-h-screen overflow-x-clip">
-      <header className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur">
+    <div className="admin-shell min-h-screen overflow-x-clip">
+      <header className="sticky top-0 z-20 border-b bg-background/80 shadow-sm backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-2">
-          <span className="mr-auto min-w-0 truncate font-bold">{business.name}</span>
+          <span className="mr-auto flex min-w-0 items-center gap-2.5">
+            <span aria-hidden className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-sm font-bold text-white shadow-sm">
+              {business.name.slice(0, 1).toUpperCase()}
+            </span>
+            <span className="truncate font-semibold tracking-tight">{business.name}</span>
+          </span>
           <Link
             href={`/reservar/${business.slug}`}
             target="_blank"

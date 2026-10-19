@@ -102,8 +102,8 @@ export function AdminNav() {
                 href={href}
                 aria-current={isActive(href) ? "page" : undefined}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-muted",
-                  isActive(href) && "bg-muted text-primary"
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-muted hover:text-foreground",
+                  isActive(href) && "bg-primary/10 text-primary shadow-[inset_2px_0_0_var(--primary)] hover:bg-primary/10 hover:text-primary"
                 )}
               >
                 <Icon className="size-4" />

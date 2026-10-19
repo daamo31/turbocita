@@ -1,5 +1,7 @@
 "use client";
 
+import { ActionForm, SubmitButton } from "@/components/action-form";
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,7 +28,7 @@ export function DocumentForm({
   const valid = lines.length > 0 && lines.every((l) => l.description.trim() && l.quantity > 0);
 
   return (
-    <form action={createDocument} className="space-y-4">
+    <ActionForm action={createDocument} success="Documento creado ✓" className="space-y-4">
       <input type="hidden" name="items" value={JSON.stringify(lines)} />
       <Card>
         <CardContent className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -93,7 +95,7 @@ export function DocumentForm({
       </Card>
 
       <div className="space-y-1"><Label>Notas</Label><Textarea name="notes" maxLength={1000} /></div>
-      <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={!valid}>Crear documento</Button>
-    </form>
+      <SubmitButton size="lg" className="w-full sm:w-auto" disabled={!valid}>Crear documento</SubmitButton>
+    </ActionForm>
   );
 }

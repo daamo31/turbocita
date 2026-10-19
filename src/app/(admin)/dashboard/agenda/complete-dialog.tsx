@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { Check, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,8 +31,8 @@ export function CompleteDialog({ appointmentId, clientName, serviceLabel, loyalt
     start(async () => {
       setError(null);
       const res = await completeAppointment({ id: appointmentId, rewardId });
-      if (res.ok) setResult(res.result);
-      else setError(res.error);
+      if (res.ok) { setResult(res.result); toast.success("Cita completada ✓"); }
+      else { setError(res.error); toast.error(res.error); }
     });
 
   return (

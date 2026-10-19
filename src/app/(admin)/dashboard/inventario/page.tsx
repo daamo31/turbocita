@@ -1,5 +1,5 @@
+import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,14 +18,14 @@ export default async function InventoryPage() {
       <Card>
         <CardHeader><CardTitle>Nuevo producto</CardTitle></CardHeader>
         <CardContent>
-          <form action={createProduct} className="grid grid-cols-2 gap-3 sm:grid-cols-6 sm:items-end">
+          <ActionForm action={createProduct} success="Producto añadido ✓" className="grid grid-cols-2 gap-3 sm:grid-cols-6 sm:items-end">
             <div className="col-span-2 space-y-1"><Label>Nombre</Label><Input name="name" required /></div>
             <div className="space-y-1"><Label>SKU</Label><Input name="sku" /></div>
             <div className="space-y-1"><Label>Precio</Label><Input name="price" type="number" step="0.01" min={0} required /></div>
             <div className="space-y-1"><Label>Stock</Label><Input name="stock" type="number" min={0} defaultValue={0} /></div>
             <div className="space-y-1"><Label>Mínimo</Label><Input name="min_stock" type="number" min={0} defaultValue={0} /></div>
-            <Button type="submit" className="col-span-2 sm:col-span-6 sm:w-fit">Añadir</Button>
-          </form>
+            <SubmitButton className="col-span-2 sm:col-span-6 sm:w-fit">Añadir</SubmitButton>
+          </ActionForm>
         </CardContent>
       </Card>
       {/* Móvil: una tarjeta por producto */}
@@ -45,11 +45,11 @@ export default async function InventoryPage() {
                   Stock: <strong>{p.stock}</strong>
                   {p.stock <= p.min_stock && <Badge variant="destructive">Bajo</Badge>}
                 </div>
-                <form action={adjustStock} className="flex gap-2">
+                <ActionForm action={adjustStock} success="Stock actualizado ✓" className="flex gap-2">
                   <input type="hidden" name="id" value={p.id} />
                   <Input name="delta" type="number" inputMode="numeric" defaultValue={1} aria-label="Cantidad a ajustar (+/−)" className="w-24" />
-                  <Button type="submit" variant="outline" className="flex-1">Ajustar stock</Button>
-                </form>
+                  <SubmitButton variant="outline" className="flex-1">Ajustar stock</SubmitButton>
+                </ActionForm>
               </CardContent>
             </Card>
           </li>
@@ -69,11 +69,11 @@ export default async function InventoryPage() {
                   {p.stock} {p.stock <= p.min_stock && <Badge variant="destructive" className="ml-1">Bajo</Badge>}
                 </TableCell>
                 <TableCell>
-                  <form action={adjustStock} className="flex gap-1">
+                  <ActionForm action={adjustStock} success="Stock actualizado ✓" className="flex gap-1">
                     <input type="hidden" name="id" value={p.id} />
                     <Input name="delta" type="number" defaultValue={1} className="h-7 w-20" />
-                    <Button type="submit" size="xs" variant="outline">Aplicar</Button>
-                  </form>
+                    <SubmitButton size="xs" variant="outline">Aplicar</SubmitButton>
+                  </ActionForm>
                 </TableCell>
               </TableRow>
             ))}

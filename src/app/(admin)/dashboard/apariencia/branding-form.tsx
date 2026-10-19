@@ -1,5 +1,7 @@
 "use client";
 
+import { ActionForm, SubmitButton } from "@/components/action-form";
+
 import { useState } from "react";
 import { BookingShell } from "@/components/business-header";
 import { Button } from "@/components/ui/button";
@@ -35,7 +37,7 @@ export function BrandingForm({ initial }: { initial: Initial }) {
   const brand = useBrand ? color : null;
 
   return (
-    <form action={saveBranding} className="grid gap-6 xl:grid-cols-[1fr_minmax(0,520px)]">
+    <ActionForm action={saveBranding} success="Apariencia guardada ✓" className="grid gap-6 xl:grid-cols-[1fr_minmax(0,520px)]">
       <input type="hidden" name="theme" value={theme} />
       <input type="hidden" name="layout" value={layout} />
       <input type="hidden" name="card_style" value={cardStyle} />
@@ -140,7 +142,7 @@ export function BrandingForm({ initial }: { initial: Initial }) {
           <div className="space-y-1"><Label>Teléfono</Label><Input name="phone" maxLength={30} value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
           <div className="space-y-1"><Label>Dirección</Label><Input name="address" maxLength={160} value={address} onChange={(e) => setAddress(e.target.value)} /></div>
         </div>
-        <Button type="submit">Guardar cambios</Button>
+        <SubmitButton>Guardar cambios</SubmitButton>
       </div>
 
       <div className="space-y-2 xl:sticky xl:top-4 xl:self-start">
@@ -175,7 +177,7 @@ export function BrandingForm({ initial }: { initial: Initial }) {
         </div>
         {layout === "split" && <p className="text-xs text-muted-foreground">La plantilla Dividida muestra la info a un lado en pantallas anchas; aquí se previsualiza en modo compacto.</p>}
       </div>
-    </form>
+    </ActionForm>
   );
 }
 

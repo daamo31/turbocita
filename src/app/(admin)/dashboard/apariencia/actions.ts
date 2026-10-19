@@ -20,9 +20,9 @@ const schema = z.object({
 
 export async function saveBranding(formData: FormData) {
   const parsed = schema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return;
+  if (!parsed.success) return { ok: false, error: "Revisa los datos: hay campos no válidos." };
   const { supabase, business, role } = await getContext();
-  if (role !== "owner") return;
+  if (role !== "owner") return { ok: false, error: "Solo el dueño puede cambiar la apariencia." };
   const d = parsed.data;
   await supabase.from("businesses").update({
     theme: d.theme,
@@ -80,7 +80,7 @@ export async function uploadLogo(_prev: FormResult, formData: FormData): Promise
 
 export async function removeLogo() {
   const { supabase, business, role } = await getContext();
-  if (role !== "owner") return;
+  if (role !== "owner") return { ok: false, error: "Solo el dueño puede quitar el logo." };
   const { data: old } = await supabase.storage.from("logos").list(business.id);
   if (old?.length) await supabase.storage.from("logos").remove(old.map((o) => `${business.id}/${o.name}`));
   await createAdminClient().from("businesses").update({ logo_url: null }).eq("id", business.id);
@@ -93,9 +93,9 @@ export async function saveFiscal(formData: FormData) {
     tax_id: z.string().trim().max(30),
     email: z.string().trim().email().max(120).or(z.literal("")),
   }).safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return;
+  if (!parsed.success) return { ok: false, error: "NIF o email no válidos." };
   const { supabase, business, role } = await getContext();
-  if (role !== "owner") return;
+  if (role !== "owner") return { ok: false, error: "Solo el dueño puede cambiar los datos fiscales." };
   await supabase.from("business_private").upsert({
     business_id: business.id, tax_id: parsed.data.tax_id || null, email: parsed.data.email || null,
   });

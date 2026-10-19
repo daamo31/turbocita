@@ -1,3 +1,4 @@
+import { ActionForm, SubmitButton } from "@/components/action-form";
 import Link from "next/link";
 import { TZDate } from "@date-fns/tz";
 import { Badge } from "@/components/ui/badge";
@@ -147,9 +148,9 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
               </div>
               <Badge className="hidden md:inline-flex" variant={a.status === "cancelled" || a.status === "no_show" ? "destructive" : "secondary"}>{LABEL[a.status]}</Badge>
               {/* Botones a todo el ancho en móvil para pulsar con el pulgar */}
-              <form action={setAppointmentStatus} className="flex flex-wrap gap-2 [&>button]:flex-1 md:[&>button]:flex-none">
+              <ActionForm action={setAppointmentStatus} success="Cita actualizada ✓" className="flex flex-wrap gap-2 [&>button]:flex-1 md:[&>button]:flex-none">
                 <input type="hidden" name="id" value={a.id} />
-                {a.status === "pending" && <Button type="submit" size="xs" name="status" value="confirmed">Confirmar</Button>}
+                {a.status === "pending" && <SubmitButton size="xs" name="status" value="confirmed">Confirmar</SubmitButton>}
                 {(a.status === "pending" || a.status === "confirmed") && (
                   <>
                     <CompleteDialog
@@ -168,10 +169,10 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
                           : null
                       }
                     />
-                    <Button type="submit" size="xs" variant="destructive" name="status" value="cancelled">Cancelar</Button>
+                    <SubmitButton size="xs" variant="destructive" name="status" value="cancelled">Cancelar</SubmitButton>
                   </>
                 )}
-              </form>
+              </ActionForm>
             </CardContent>
           </Card>
         );

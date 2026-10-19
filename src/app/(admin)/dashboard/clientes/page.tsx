@@ -1,3 +1,4 @@
+import { ActionForm } from "@/components/action-form";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -55,10 +56,10 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
                 <a href={`/dashboard/clientes/${c.id}/export`}>
                   <Button type="button" size="xs" variant="outline">Descargar datos</Button>
                 </a>
-                <form action={anonymizeClient}>
+                <ActionForm action={anonymizeClient} success="Cliente anonimizado">
                   <input type="hidden" name="id" value={c.id} />
                   <ConfirmButton message={`¿Anonimizar a ${c.name}? Se borrarán su nombre, teléfono, email y notas. No se puede deshacer.`}>Anonimizar</ConfirmButton>
-                </form>
+                </ActionForm>
               </div>
             </li>
           ))}
