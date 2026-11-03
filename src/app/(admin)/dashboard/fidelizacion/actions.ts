@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getContext } from "@/lib/auth";
+import { PLANS } from "@/lib/plans";
 import type { CompleteAppointmentResponse, CompleteAppointmentResult } from "@/types/loyalty";
 
 const schema = z.object({
@@ -42,13 +43,16 @@ const programSchema = z.object({
 });
 
 // Guarda el programa activo y sus niveles de forma atómica (solo el dueño; se vuelve a comprobar en SQL).
-export async function saveLoyaltyProgram(formData: FormData): Promise<void> {
+export async function saveLoyaltyProgram(formData: FormData): Promise<{ ok: false; error: string } | void> {
   let tiers: unknown;
   try { tiers = JSON.parse(String(formData.get("tiers") ?? "[]")); } catch { return; }
   const parsed = programSchema.safeParse({ service_id: formData.get("service_id") ?? "", tiers });
   if (!parsed.success) return;
-  const { supabase, business, role } = await getContext();
+  const { supabase, business, role, plan } = await getContext();
   if (role !== "owner") return;
+  const maxTiers = PLANS[plan].maxLoyaltyTiers;
+  if (parsed.data.tiers.length > maxTiers)
+    return { ok: false, error: `Tu plan ${PLANS[plan].name} permite hasta ${maxTiers} ${maxTiers === 1 ? "nivel" : "niveles"} de recompensa.` };
 
   await supabase.rpc("save_loyalty_program", {
     p_business: business.id,

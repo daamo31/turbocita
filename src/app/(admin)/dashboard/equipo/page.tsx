@@ -1,11 +1,14 @@
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getContext } from "@/lib/auth";
+import { PLANS } from "@/lib/plans";
+import Link from "next/link";
 import { addProfessional, removeProfessional, saveBusinessSchedule } from "./actions";
 import { ScheduleEditor, type Schedule } from "./schedule-editor";
 
 export default async function TeamPage() {
-  const { supabase, business, role } = await getContext();
+  const { supabase, business, role, plan } = await getContext();
+  const max = PLANS[plan].maxProfessionals;
   const [{ count }, { data: biz }] = await Promise.all([
     supabase.from("professionals").select("id", { count: "exact", head: true }).eq("business_id", business.id).eq("active", true),
     supabase.from("businesses").select("default_schedule").eq("id", business.id).single(),
@@ -30,9 +33,13 @@ export default async function TeamPage() {
               <div className="text-xs text-muted-foreground">{n === 1 ? "profesional" : "profesionales"}</div>
             </div>
             <ActionForm action={addProfessional} success="Profesional añadido ✓">
-              <SubmitButton size="lg" className="size-14 rounded-full text-2xl" aria-label="Añadir un profesional">+</SubmitButton>
+              <SubmitButton size="lg" className="size-14 rounded-full text-2xl" disabled={n >= max} aria-label="Añadir un profesional">+</SubmitButton>
             </ActionForm>
           </div>
+          <p className="text-center text-xs text-muted-foreground">
+            Plan {PLANS[plan].name}: {n} de {max >= 50 ? "ilimitados" : max} {max === 1 ? "profesional" : "profesionales"}.{" "}
+            {n >= max && max < 50 && <Link href="/dashboard/plan" className="text-primary underline">Mejora tu plan para añadir más.</Link>}
+          </p>
           <p className="text-center text-sm text-muted-foreground">
             Es el máximo de citas simultáneas: cada profesional atiende una cita a la vez. Con {n}, a cualquier hora (no solo a las 11:00)
             puede haber hasta {n} {n === 1 ? "cita" : "citas"} al mismo tiempo. Si hoy hay menos gente, ajusta el número.

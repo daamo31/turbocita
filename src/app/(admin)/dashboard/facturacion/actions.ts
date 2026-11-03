@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getContext } from "@/lib/auth";
+import { hasFeature } from "@/lib/plans";
 
 const itemsSchema = z.array(z.object({
   description: z.string().trim().min(1).max(200),
@@ -28,7 +29,8 @@ export async function createDocument(formData: FormData) {
   if (!parsed.success || !items) redirect("/dashboard/facturacion/nuevo?error=Datos+no+válidos");
   const d = parsed.data!;
 
-  const { supabase, business } = await getContext();
+  const { supabase, business, plan } = await getContext();
+  if (!hasFeature(plan, "invoicing")) redirect("/dashboard/facturacion/nuevo?error=Facturación+disponible+desde+el+plan+Growth");
   let clientId = d.clientId || null;
   if (!clientId && d.newName && d.newPhone) {
     const { data } = await supabase.from("clients")

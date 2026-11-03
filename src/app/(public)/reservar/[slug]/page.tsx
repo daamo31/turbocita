@@ -1,5 +1,8 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { parsePlan, showPoweredBy } from "@/lib/plans";
 import { BookingShell } from "@/components/business-header";
 import { themeStyle, LAYOUTS, type LayoutKey } from "@/lib/themes";
 import { Gift } from "lucide-react";
@@ -23,6 +26,9 @@ export default async function BookingPage({ params }: PageProps<"/reservar/[slug
     .sort((a, b) => a.stamps - b.stamps);
 
   const layout = (business.layout in LAYOUTS ? business.layout : "classic") as LayoutKey;
+  // La función de plan no es ejecutable por anon: se consulta en servidor con service role
+  const { data: planRaw } = await createAdminClient().rpc("effective_plan", { p_business: business.id });
+  const poweredBy = showPoweredBy(parsePlan(planRaw));
 
   return (
     <div style={themeStyle(business.theme, business.brand_color, business.card_style, business.pattern)} className="bk-backdrop relative isolate min-h-screen">
@@ -47,6 +53,11 @@ export default async function BookingPage({ params }: PageProps<"/reservar/[slug
           services={services ?? []}
           tiers={tiers}
         />
+        {poweredBy && (
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            Reservas con <Link href="/" className="underline">TurboCita</Link>
+          </p>
+        )}
       </BookingShell>
     </div>
   );

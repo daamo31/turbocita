@@ -2,11 +2,12 @@ import { headers } from "next/headers";
 import QRCode from "qrcode";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getContext } from "@/lib/auth";
+import { hasFeature } from "@/lib/plans";
 import { BrandingForm } from "./branding-form";
 import { DomainCard, FiscalCard, LogoCard } from "./settings-cards";
 
 export default async function AppearancePage() {
-  const { supabase, business, role } = await getContext();
+  const { supabase, business, role, plan } = await getContext();
   const [{ data: b }, { data: priv }] = await Promise.all([
     supabase.from("businesses")
       .select("name, theme, layout, card_style, pattern, brand_color, tagline, description, phone, address, logo_url, custom_domain")
@@ -42,7 +43,7 @@ export default async function AppearancePage() {
         <>
           <LogoCard logoUrl={b.logo_url} />
           <BrandingForm initial={b} />
-          <DomainCard slug={business.slug} domain={b.custom_domain} root={root} />
+          <DomainCard slug={business.slug} domain={b.custom_domain} root={root} locked={!hasFeature(plan, "customDomain")} />
           <FiscalCard taxId={priv?.tax_id ?? null} email={priv?.email ?? null} />
         </>
       ) : (

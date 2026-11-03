@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { parsePlan } from "@/lib/plans";
 
 // Devuelve cliente, usuario y negocio activo; crea el negocio en el primer acceso
 // si el registro guardó sus datos en user_metadata (caso de confirmación por email).
@@ -37,5 +38,7 @@ export const getContext = cache(async () => {
     id: string; name: string; slug: string; currency: string; timezone: string;
     phone: string | null; address: string | null; logo_url: string | null;
   };
-  return { supabase, user, business, role: member!.role as "owner" | "employee" };
+  const { data: planRaw } = await supabase.rpc("effective_plan", { p_business: business.id });
+  const plan = parsePlan(planRaw);
+  return { supabase, user, business, plan, role: member!.role as "owner" | "employee" };
 });

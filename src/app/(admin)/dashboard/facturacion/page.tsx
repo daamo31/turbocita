@@ -4,15 +4,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getContext } from "@/lib/auth";
+import { hasFeature } from "@/lib/plans";
+import { UpgradeCard } from "@/components/upgrade-card";
 import { money } from "@/lib/utils";
 import { STATUS_LABEL, TYPE_LABEL } from "@/lib/labels";
 
 export default async function BillingPage() {
-  const { supabase, business } = await getContext();
+  const { supabase, business, plan } = await getContext();
   const { data: docs } = await supabase
     .from("documents")
     .select("id, type, number, status, issue_date, tax_rate, clients(name), document_items(quantity, unit_price)")
     .order("created_at", { ascending: false }).limit(100);
+
+  // Tras bajar de plan se conservan (y se pueden consultar) los documentos ya emitidos
+  if (!hasFeature(plan, "invoicing") && !docs?.length) return <UpgradeCard feature="invoicing" />;
 
   const total = (d: { tax_rate: number | string; document_items: { quantity: number | string; unit_price: number | string }[] }) =>
     d.document_items.reduce((s, i) => s + Number(i.quantity) * Number(i.unit_price), 0) * (1 + Number(d.tax_rate) / 100);
@@ -21,6 +26,7 @@ export default async function BillingPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <h1 className="mr-auto text-xl font-bold">Presupuestos y facturas</h1>
+        {plan !== "starter" && <a href="/api/export/documents" download><Button variant="outline">Exportar CSV</Button></a>}
         <Link href="/dashboard/facturacion/nuevo" className="w-full sm:w-auto"><Button className="w-full">Nuevo documento</Button></Link>
       </div>
       {(docs ?? []).length === 0 && <p className="text-sm text-muted-foreground">Aún no hay documentos.</p>}

@@ -3,6 +3,7 @@
 import { ActionForm, SubmitButton } from "@/components/action-form";
 
 import { useActionState, useEffect } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -41,19 +42,24 @@ export function LogoCard({ logoUrl }: { logoUrl: string | null }) {
   );
 }
 
-export function DomainCard({ slug, domain, root }: { slug: string; domain: string | null; root: string | null }) {
+export function DomainCard({ slug, domain, root, locked }: { slug: string; domain: string | null; root: string | null; locked?: boolean }) {
   const [res, action, pending] = useActionState(saveDomain, null);
   return (
     <Card>
       <CardHeader><CardTitle>Dominio propio</CardTitle></CardHeader>
       <CardContent className="space-y-3 text-sm">
+        {locked && (
+          <p className="rounded-md bg-amber-100 p-3 text-xs text-amber-900">
+            El dominio propio está disponible en el plan Pro. <Link href="/dashboard/plan" className="underline">Ver planes</Link>
+          </p>
+        )}
         {root && <p>Dirección incluida: <b>{slug}.{root}</b></p>}
         <form action={action} className="flex flex-wrap items-end gap-2">
           <div className="space-y-1">
             <Label htmlFor="domain">Tu dominio</Label>
-            <Input id="domain" name="domain" placeholder="reservas.mipeluqueria.com" defaultValue={domain ?? ""} className="w-72" />
+            <Input id="domain" name="domain" placeholder="reservas.mipeluqueria.com" defaultValue={domain ?? ""} disabled={locked && !domain} className="w-72" />
           </div>
-          <SubmitButton disabled={pending}>Guardar</SubmitButton>
+          <SubmitButton disabled={pending || (locked && !domain)}>Guardar</SubmitButton>
         </form>
         {domain && (
           <div className="rounded-md bg-muted p-3 text-xs">

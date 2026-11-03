@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { getContext } from "@/lib/auth";
+import { PLANS } from "@/lib/plans";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { deactivateLoyaltyProgram, saveLoyaltyProgram } from "./actions";
@@ -17,7 +18,7 @@ export default async function LoyaltyPage({ searchParams }: { searchParams: Prom
   const sp = await searchParams;
   const q = (sp.q ?? "").replace(/[,()%*\\]/g, " ").trim().slice(0, 40);
   const page = Math.max(1, Number(sp.page) || 1);
-  const { supabase, role } = await getContext();
+  const { supabase, role, plan } = await getContext();
   const [{ data: program }, { data: services }] = await Promise.all([
     supabase.from("loyalty_programs").select("id, service_id, loyalty_tiers(stamps, discount_percent, description)").eq("is_active", true).maybeSingle(),
     supabase.from("services").select("id, name").eq("active", true).order("name"),
@@ -54,7 +55,7 @@ export default async function LoyaltyPage({ searchParams }: { searchParams: Prom
                   <option value="">Todos los servicios</option>
                   {(services ?? []).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select></div>
-              <TierEditor initial={tiers} />
+              <TierEditor initial={tiers} maxTiers={PLANS[plan].maxLoyaltyTiers} />
             </ActionForm>
             {program && (
               <ActionForm action={deactivateLoyaltyProgram} success="Programa desactivado" className="mt-3">

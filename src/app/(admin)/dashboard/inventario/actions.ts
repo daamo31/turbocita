@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getContext } from "@/lib/auth";
+import { hasFeature, planError } from "@/lib/plans";
 
 export async function createProduct(formData: FormData) {
   const parsed = z.object({
@@ -13,7 +14,8 @@ export async function createProduct(formData: FormData) {
     min_stock: z.coerce.number().int().min(0).max(1_000_000),
   }).safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, error: "Revisa los datos del producto." };
-  const { supabase, business } = await getContext();
+  const { supabase, business, plan } = await getContext();
+  if (!hasFeature(plan, "inventory")) return { ok: false, error: planError("inventory") };
   await supabase.from("products").insert({ ...parsed.data, sku: parsed.data.sku || null, business_id: business.id });
   revalidatePath("/dashboard/inventario");
 }
@@ -22,7 +24,8 @@ export async function adjustStock(formData: FormData) {
   const id = z.string().uuid().parse(formData.get("id"));
   const delta = z.coerce.number().int().min(-100000).max(100000).parse(formData.get("delta"));
   if (delta === 0) return { ok: false, error: "Indica una cantidad distinta de 0." };
-  const { supabase } = await getContext();
+  const { supabase, plan } = await getContext();
+  if (!hasFeature(plan, "inventory")) return { ok: false, error: planError("inventory") };
   await supabase.rpc("adjust_stock", { p_product: id, p_delta: delta, p_reason: "Ajuste manual" });
   revalidatePath("/dashboard/inventario");
 }

@@ -14,7 +14,8 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
   const sp = await searchParams;
   const q = (sp.q ?? "").replace(/[,()%*\\]/g, " ").trim().slice(0, 40);
   const page = Math.max(1, Number(sp.page) || 1);
-  const { supabase } = await getContext();
+  const { supabase, plan, role } = await getContext();
+  const canExport = role === "owner" && plan !== "starter";
 
   let query = supabase
     .from("clients")
@@ -29,7 +30,12 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold">Clientes</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="mr-auto text-xl font-bold">Clientes</h1>
+        {canExport
+          ? <a href="/api/export/clients" download><Button variant="outline" size="sm">Exportar CSV</Button></a>
+          : <span className="text-xs text-muted-foreground">Exportar CSV: plan Growth</span>}
+      </div>
       <p className="text-sm text-muted-foreground">
         Protección de datos: descarga los datos de un cliente (derecho de acceso) o anonimízalo si pide que borres sus datos. Se conservan las citas y sus importes, pero sin identificarle.
       </p>

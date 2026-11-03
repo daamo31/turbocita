@@ -28,8 +28,9 @@ const PRESETS: { name: string; tiers: Row[] }[] = [
 ];
 
 // Editor de niveles: el dueño decide cuántos sellos dan qué descuento (100% = gratis).
-export function TierEditor({ initial }: { initial: Row[] }) {
-  const [rows, setRows] = useState<Row[]>(initial.length ? initial : PRESETS[0].tiers);
+export function TierEditor({ initial, maxTiers = 10 }: { initial: Row[]; maxTiers?: number }) {
+  const presets = PRESETS.filter((p) => p.tiers.length <= maxTiers);
+  const [rows, setRows] = useState<Row[]>(initial.length ? initial : presets[0].tiers);
   const update = (i: number, patch: Partial<Row>) => setRows((r) => r.map((x, j) => (j === i ? { ...x, ...patch } : x)));
   const stamps = rows.map((r) => r.stamps);
   const duplicated = new Set(stamps).size !== stamps.length;
@@ -39,7 +40,7 @@ export function TierEditor({ initial }: { initial: Row[] }) {
     <div className="space-y-3 sm:col-span-2">
       <input type="hidden" name="tiers" value={JSON.stringify(rows)} />
       <div className="flex flex-wrap gap-2">
-        {PRESETS.map((p) => (
+        {presets.map((p) => (
           <Button key={p.name} type="button" variant="outline" size="sm" onClick={() => setRows(p.tiers)}>{p.name}</Button>
         ))}
       </div>
@@ -62,7 +63,7 @@ export function TierEditor({ initial }: { initial: Row[] }) {
 
       {duplicated && <p role="alert" className="text-sm text-destructive">No repitas el número de sellos en dos niveles.</p>}
       <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="outline" size="sm" disabled={rows.length >= 10}
+        <Button type="button" variant="outline" size="sm" disabled={rows.length >= maxTiers}
           onClick={() => setRows((x) => [...x, { stamps: Math.min(100, Math.max(...x.map((r) => r.stamps)) + 5), discount_percent: 100, description: "" }])}>
           <Plus /> Añadir nivel
         </Button>

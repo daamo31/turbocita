@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getContext } from "@/lib/auth";
+import { PLANS } from "@/lib/plans";
 
 const time = z.string().regex(/^\d{2}:\d{2}$/);
 const scheduleSchema = z.record(
@@ -59,15 +60,19 @@ export async function saveBusinessSchedule(formData: FormData) {
 
 // +1 profesional: reactiva un puesto antiguo si lo hay, si no crea "Profesional N"
 export async function addProfessional() {
-  const { supabase, business } = await getContext();
+  const { supabase, business, plan } = await getContext();
   const { data: all } = await supabase.from("professionals").select("id, active").eq("business_id", business.id).order("created_at");
-  if ((all ?? []).filter((p) => p.active).length >= 50) return { ok: false, error: "Has alcanzado el máximo de 50 profesionales." };
+  const max = PLANS[plan].maxProfessionals;
+  if ((all ?? []).filter((p) => p.active).length >= max)
+    return { ok: false, error: `Tu plan ${PLANS[plan].name} permite hasta ${max} ${max === 1 ? "profesional" : "profesionales"}. Mejora tu plan para añadir más.` };
   const old = (all ?? []).find((p) => !p.active);
   if (old) {
-    await supabase.from("professionals").update({ active: true }).eq("id", old.id);
+    const { error } = await supabase.from("professionals").update({ active: true }).eq("id", old.id);
+    if (error) return { ok: false, error: "No se pudo añadir el profesional (límite del plan)." };
   } else {
-    const { data: pro } = await supabase.from("professionals")
+    const { data: pro, error } = await supabase.from("professionals")
       .insert({ business_id: business.id, name: `Profesional ${(all?.length ?? 0) + 1}` }).select("id").single();
+    if (error) return { ok: false, error: "No se pudo añadir el profesional (límite del plan)." };
     const { data: biz } = await supabase.from("businesses").select("default_schedule").eq("id", business.id).single();
     if (pro) await applySchedule(supabase, [pro.id], (biz?.default_schedule ?? {}) as Record<string, { start: string; end: string }[]>);
   }

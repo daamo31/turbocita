@@ -6,15 +6,23 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getContext } from "@/lib/auth";
 import { money } from "@/lib/utils";
+import { hasFeature } from "@/lib/plans";
+import { UpgradeCard } from "@/components/upgrade-card";
 import { adjustStock, createProduct } from "./actions";
 
 export default async function InventoryPage() {
-  const { supabase, business } = await getContext();
+  const { supabase, business, plan } = await getContext();
+  if (!hasFeature(plan, "inventory")) return <UpgradeCard feature="inventory" />;
   const { data: products } = await supabase.from("products").select("*").order("name");
 
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-bold">Inventario</h1>
+      {(products ?? []).some((p) => p.stock <= p.min_stock) && (
+        <div role="alert" className="rounded-lg bg-amber-100 p-3 text-sm text-amber-900">
+          <b>Stock bajo:</b> {(products ?? []).filter((p) => p.stock <= p.min_stock).map((p) => `${p.name} (${p.stock})`).join(", ")}
+        </div>
+      )}
       <Card>
         <CardHeader><CardTitle>Nuevo producto</CardTitle></CardHeader>
         <CardContent>

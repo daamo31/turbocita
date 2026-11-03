@@ -33,6 +33,9 @@ npm run dev                  # http://localhost:3000
 | `NOTIFY_ALLOWED_PREFIXES` | No | Prefijos telefónicos permitidos para notificaciones (por defecto `+34`) |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | No | CAPTCHA Cloudflare Turnstile en reservas. Sin ellas, desactivado |
 | `VERCEL_API_TOKEN`, `VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID` | No | Registrar dominios propios en Vercel automáticamente |
+| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | No | Suscripciones (Stripe). Sin ellas, `/dashboard/plan` solo muestra los planes. Precios: `npm run stripe:setup`. Webhook: `POST /api/stripe/webhook` con eventos `checkout.session.completed`, `customer.subscription.*` e `invoice.paid` / `invoice.payment_failed` |
+| `STRIPE_TRIAL_DAYS` | No | Días de prueba gratuita en el Checkout |
+| `NEXT_PUBLIC_SALES_CONTACT` | No | Email o enlace de contacto mostrado si Stripe no está configurado |
 
 ## Base de datos y migraciones
 

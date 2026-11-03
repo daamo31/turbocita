@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getContext } from "@/lib/auth";
+import { hasFeature, planError } from "@/lib/plans";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { THEME_KEYS, LAYOUT_KEYS, CARD_STYLES, PATTERNS } from "@/lib/themes";
 
@@ -121,7 +122,7 @@ async function vercelDomain(method: "POST" | "DELETE", domain: string) {
 }
 
 export async function saveDomain(_prev: FormResult, formData: FormData): Promise<FormResult> {
-  const { supabase, business, role } = await getContext();
+  const { supabase, business, role, plan } = await getContext();
   if (role !== "owner") return { ok: false, message: "Solo el dueño puede cambiar el dominio." };
 
   const root = process.env.NEXT_PUBLIC_ROOT_DOMAIN?.toLowerCase();
@@ -135,6 +136,7 @@ export async function saveDomain(_prev: FormResult, formData: FormData): Promise
     revalidatePath("/dashboard/apariencia");
     return { ok: true, message: "Dominio eliminado." };
   }
+  if (!hasFeature(plan, "customDomain")) return { ok: false, message: planError("customDomain") };
   if (!domainRe.test(domain)) return { ok: false, message: "Dominio no válido (ej. reservas.mipeluqueria.com)." };
   if (root && (domain === root || domain.endsWith(`.${root}`)))
     return { ok: false, message: "Ese dominio pertenece a la plataforma." };

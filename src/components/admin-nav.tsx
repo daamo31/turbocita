@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, Gift, MoreHorizontal, Package, Palette, Receipt, Scissors, UserRound, Users, X } from "lucide-react";
+import { BarChart3, CalendarDays, Gift, MoreHorizontal, Package, Palette, Receipt, Scissors, Sparkles, UserRound, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -14,7 +14,9 @@ const NAV = [
   { href: "/dashboard/clientes", label: "Clientes", icon: UserRound },
   { href: "/dashboard/inventario", label: "Inventario", icon: Package },
   { href: "/dashboard/facturacion", label: "Facturas", icon: Receipt },
+  { href: "/dashboard/reportes", label: "Reportes", icon: BarChart3 },
   { href: "/dashboard/apariencia", label: "Apariencia", icon: Palette },
+  { href: "/dashboard/plan", label: "Mi plan", icon: Sparkles },
 ] as const;
 
 const MAIN = NAV.slice(0, 3); // fijos en la barra móvil
@@ -34,8 +36,8 @@ export function AdminNav() {
     <>
       {open && (
         <div className="fixed inset-0 z-40 md:hidden" role="dialog" aria-modal="true" aria-label="Más opciones">
-          <button type="button" aria-label="Cerrar" className="absolute inset-0 bg-black/40" onClick={() => setOpenPath(null)} />
-          <div className="absolute inset-x-0 bottom-0 rounded-t-2xl border-t bg-background p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-lg">
+          <button type="button" aria-label="Cerrar" className="absolute inset-0 bg-black/50" onClick={() => setOpenPath(null)} />
+          <div className="absolute inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] max-h-[70vh] overflow-y-auto rounded-t-2xl border-t bg-background p-4 shadow-lg">
             <div className="mb-2 flex items-center justify-between">
               <span className="font-semibold">Más</span>
               <button type="button" aria-label="Cerrar" className="flex size-11 items-center justify-center rounded-lg hover:bg-muted" onClick={() => setOpenPath(null)}>
