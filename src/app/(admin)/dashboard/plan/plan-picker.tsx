@@ -38,27 +38,27 @@ export function PlanPicker({ plan, interval: current, subscribed, status, enable
           const isCurrent = id === plan && status !== "canceled";
           const price = interval === "year" ? p.yearlyMonthly : p.monthly;
           return (
-            <Card key={id} className={isCurrent ? "ring-2 ring-primary" : undefined}>
+            <Card key={id} className={cn("h-full", isCurrent && "ring-2 ring-primary")}>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   {p.name} {isCurrent && <Badge>Actual</Badge>}
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">{p.audience}</p>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="flex flex-1 flex-col gap-3">
                 <div>
                   <span className="text-3xl font-bold">{price} €</span>
                   <span className="text-sm text-muted-foreground"> /mes{id === "pro" && " por sede"}</span>
                   {interval === "year" && <div className="text-xs text-muted-foreground">Facturado {p.yearlyTotal} € al año</div>}
                 </div>
-                <ul className="space-y-1.5 text-sm">
+                <ul className="flex-1 space-y-1.5 text-sm">
                   {p.features.map((f) => (
                     <li key={f} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-primary" />{f}</li>
                   ))}
                   <li className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-primary" />Soporte: {p.support}</li>
                 </ul>
                 {enabled && isOwner && !subscribed && (
-                  <form action={startCheckout}>
+                  <form action={startCheckout} className="mt-auto">
                     <input type="hidden" name="plan" value={id} />
                     <input type="hidden" name="interval" value={interval} />
                     <SubmitButton className="w-full">Elegir {p.name}</SubmitButton>
