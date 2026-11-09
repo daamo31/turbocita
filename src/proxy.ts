@@ -6,9 +6,9 @@ const ROOT = process.env.NEXT_PUBLIC_ROOT_DOMAIN?.toLowerCase(); // ej. turbocit
 // Devuelve el slug del negocio si el host es de un tenant (subdominio o dominio propio).
 async function tenantSlug(rawHost: string): Promise<string | null> {
   const host = rawHost.split(":")[0].toLowerCase();
-  if (!ROOT || host === ROOT || host === `www.${ROOT}` || host === "localhost" || host.endsWith(".vercel.app")) return null;
+  if ((ROOT && (host === ROOT || host === `www.${ROOT}`)) || host === "localhost" || host.endsWith(".vercel.app")) return null;
 
-  if (host.endsWith(`.${ROOT}`)) {
+  if (ROOT && host.endsWith(`.${ROOT}`)) {
     const sub = host.slice(0, -(ROOT.length + 1));
     return /^[a-z0-9-]{3,40}$/.test(sub) ? sub : null;
   }

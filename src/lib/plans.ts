@@ -11,7 +11,6 @@ export type PlanDef = {
   audience: string;
   maxProfessionals: number;
   maxLoyaltyTiers: number;
-  customDomain: boolean;
   inventory: boolean;
   invoicing: boolean;
   reports: boolean;
@@ -23,35 +22,35 @@ export const PLANS: Record<PlanId, PlanDef> = {
   starter: {
     id: "starter", name: "Starter", monthly: 19, yearlyMonthly: 15, yearlyTotal: 180,
     audience: "Barberos y peluqueros independientes",
-    maxProfessionals: 1, maxLoyaltyTiers: 1, customDomain: false, inventory: false, invoicing: false, reports: false,
+    maxProfessionals: 1, maxLoyaltyTiers: 1, inventory: false, invoicing: false, reports: false,
     support: "Email (24-48 h)",
     features: ["1 profesional (agenda individual)", "Reserva online con enlace personalizado", "Fidelización básica de sellos", "Agenda, citas y base de clientes"],
   },
   growth: {
     id: "growth", name: "Growth", monthly: 39, yearlyMonthly: 31, yearlyTotal: 372,
     audience: "Barberías y salones de 2 a 5 profesionales",
-    maxProfessionals: 5, maxLoyaltyTiers: 2, customDomain: false, inventory: true, invoicing: true, reports: false,
+    maxProfessionals: 5, maxLoyaltyTiers: 2, inventory: true, invoicing: true, reports: false,
     support: "Email y WhatsApp prioritario",
     features: ["Hasta 5 profesionales con horarios independientes", "Fidelización personalizable (premios a los 5 y 10 sellos)", "Control de inventario", "Facturación y presupuestos"],
   },
   pro: {
     id: "pro", name: "Pro", monthly: 79, yearlyMonthly: 63, yearlyTotal: 756,
     audience: "Franquicias y negocios con varias sedes (precio por sede)",
-    maxProfessionals: 50, maxLoyaltyTiers: 10, customDomain: true, inventory: true, invoicing: true, reports: true,
+    maxProfessionals: 50, maxLoyaltyTiers: 10, inventory: true, invoicing: true, reports: true,
     support: "Gestor de cuenta y teléfono",
-    features: ["Todo lo de Growth", "Profesionales ilimitados", "Dominio propio (reservas.mi-barberia.com)", "Fidelización con múltiples niveles", "Reportes analíticos avanzados"],
+    features: ["Todo lo de Growth", "Profesionales ilimitados", "Fidelización con múltiples niveles", "Reportes analíticos avanzados"],
   },
 };
 
-export type Feature = "inventory" | "invoicing" | "reports" | "customDomain";
+export type Feature = "inventory" | "invoicing" | "reports";
 
 // Plan mínimo que desbloquea cada función
 export const FEATURE_MIN_PLAN: Record<Feature, PlanId> = {
-  inventory: "growth", invoicing: "growth", reports: "pro", customDomain: "pro",
+  inventory: "growth", invoicing: "growth", reports: "pro",
 };
 
 export const FEATURE_LABEL: Record<Feature, string> = {
-  inventory: "Inventario", invoicing: "Facturación", reports: "Reportes analíticos", customDomain: "Dominio propio",
+  inventory: "Inventario", invoicing: "Facturación", reports: "Reportes analíticos",
 };
 
 export function parsePlan(value: unknown): PlanId {

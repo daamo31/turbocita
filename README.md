@@ -7,10 +7,10 @@ Citas online, inventario y facturación para peluquerías y negocios locales. Mu
 ## Funcionalidades
 
 - **Reservas públicas** en `/reservar/[slug]`: elección de uno o varios servicios (p. ej. corte + barba), profesional, fecha/hora y datos. Diseño pensado para móvil.
-- **Panel** (`/dashboard`): agenda, servicios (crear, activar/desactivar, eliminar), equipo y horarios, inventario, facturación y presupuestos con PDF, fidelización y apariencia (tema, logo, colores, dominio propio).
+- **Panel** (`/dashboard`): agenda, servicios (crear, activar/desactivar, eliminar), equipo y horarios, inventario, facturación y presupuestos con PDF, fidelización y apariencia (tema, logo y colores).
 - **Fidelización** (`/dashboard/fidelizacion`): programa de sellos con niveles de descuento (hasta 100 % = gratis), por servicio o general. Al completar una cita desde la agenda se suma un sello y se pueden canjear recompensas. Al reservar, el cliente ve sus sellos escribiendo solo su teléfono (sin cuenta ni correo; solo se muestran contadores, con límite de peticiones). Opcionalmente puede ver el detalle completo en `/mi-tarjeta` con un enlace por email.
 - **Notificaciones** opcionales por SMS/WhatsApp (Twilio) y archivo `.ics` para añadir la cita al calendario.
-- **Multi-tenant** con RLS: cada negocio solo ve sus datos. Subdominios `slug.tudominio.com` y dominios propios.
+- **Multi-tenant** con RLS: cada negocio solo ve sus datos. Subdominios `slug.tudominio.com` opcionales. Se mantiene la compatibilidad con dominios propios existentes, pero no se pueden configurar nuevos desde el panel.
 
 ## Puesta en marcha
 
@@ -32,7 +32,6 @@ npm run dev                  # http://localhost:3000
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` | No | Notificaciones. `TWILIO_FROM=whatsapp:+14155238886` para WhatsApp |
 | `NOTIFY_ALLOWED_PREFIXES` | No | Prefijos telefónicos permitidos para notificaciones (por defecto `+34`) |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | No | CAPTCHA Cloudflare Turnstile en reservas. Sin ellas, desactivado |
-| `VERCEL_API_TOKEN`, `VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID` | No | Registrar dominios propios en Vercel automáticamente |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | No | Suscripciones (Stripe). Sin ellas, `/dashboard/plan` solo muestra los planes. Precios: `npm run stripe:setup`. Webhook: `POST /api/stripe/webhook` con eventos `checkout.session.completed`, `customer.subscription.*` e `invoice.paid` / `invoice.payment_failed` |
 | `STRIPE_TRIAL_DAYS` | No | Días de prueba gratuita en el Checkout |
 | `NEXT_PUBLIC_SALES_CONTACT` | No | Email o enlace de contacto mostrado si Stripe no está configurado |

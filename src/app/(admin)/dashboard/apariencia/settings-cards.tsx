@@ -3,12 +3,11 @@
 import { ActionForm, SubmitButton } from "@/components/action-form";
 
 import { useActionState, useEffect } from "react";
-import Link from "next/link";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { removeLogo, saveDomain, saveFiscal, uploadLogo, type FormResult } from "./actions";
+import { removeLogo, saveFiscal, uploadLogo, type FormResult } from "./actions";
 
 function Msg({ r }: { r: FormResult }) {
   useEffect(() => {
@@ -36,37 +35,6 @@ export function LogoCard({ logoUrl }: { logoUrl: string | null }) {
           <ActionForm action={removeLogo} success="Logo eliminado"><SubmitButton variant="outline" size="sm">Quitar logo</SubmitButton></ActionForm>
         )}
         <p className="text-xs text-muted-foreground">PNG, JPG o WebP, máximo 1 MB.</p>
-        <Msg r={res} />
-      </CardContent>
-    </Card>
-  );
-}
-
-export function DomainCard({ slug, domain, root, locked }: { slug: string; domain: string | null; root: string | null; locked?: boolean }) {
-  const [res, action, pending] = useActionState(saveDomain, null);
-  return (
-    <Card>
-      <CardHeader><CardTitle>Dominio propio</CardTitle></CardHeader>
-      <CardContent className="space-y-3 text-sm">
-        {locked && (
-          <p className="rounded-md bg-amber-100 p-3 text-xs text-amber-900">
-            El dominio propio está disponible en el plan Pro. <Link href="/dashboard/plan" className="underline">Ver planes</Link>
-          </p>
-        )}
-        {root && <p>Dirección incluida: <b>{slug}.{root}</b></p>}
-        <form action={action} className="flex flex-wrap items-end gap-2">
-          <div className="space-y-1">
-            <Label htmlFor="domain">Tu dominio</Label>
-            <Input id="domain" name="domain" placeholder="reservas.mipeluqueria.com" defaultValue={domain ?? ""} disabled={locked && !domain} className="w-72" />
-          </div>
-          <SubmitButton disabled={pending || (locked && !domain)}>Guardar</SubmitButton>
-        </form>
-        {domain && (
-          <div className="rounded-md bg-muted p-3 text-xs">
-            Configura en tu proveedor de DNS: <b>CNAME</b> de <code>{domain}</code> → <code>cname.vercel-dns.com</code>
-            {" "}(si es un dominio raíz, un registro <b>A</b> → <code>76.76.21.21</code>). Puede tardar unos minutos.
-          </div>
-        )}
         <Msg r={res} />
       </CardContent>
     </Card>
