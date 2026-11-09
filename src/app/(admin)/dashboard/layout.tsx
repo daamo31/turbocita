@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ExternalLink, LogOut } from "lucide-react";
 import { getContext } from "@/lib/auth";
-import { Button } from "@/components/ui/button";
+import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Tip } from "@/components/ui/tooltip";
 import { AdminNav } from "@/components/admin-nav";
 import { signOut } from "@/app/(auth)/login/actions";
@@ -30,14 +30,14 @@ export default async function AdminLayout({ children }: LayoutProps<"/dashboard"
               <span className="sm:hidden">Mi web</span>
             </Link>
           </Tip>
-          <form action={signOut}>
+          <ActionForm action={signOut} success="Sesión cerrada">
             <Tip label="Cerrar sesión">
-              <Button variant="outline" size="sm" aria-label="Cerrar sesión">
+              <SubmitButton variant="outline" size="sm" aria-label="Cerrar sesión">
                 <LogOut className="size-4" />
                 <span className="hidden sm:inline">Salir</span>
-              </Button>
+              </SubmitButton>
             </Tip>
-          </form>
+          </ActionForm>
         </div>
       </header>
 

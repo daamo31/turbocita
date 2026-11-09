@@ -52,6 +52,10 @@ export async function signUp(formData: FormData) {
 
 export async function signOut() {
   const supabase = await createClient();
-  await supabase.auth.signOut();
+  const { error } = await supabase.auth.signOut();
+  if (error) {
+    console.error("No se pudo cerrar la sesión", error);
+    return { ok: false, error: "No se pudo cerrar la sesión. Inténtalo de nuevo." };
+  }
   redirect("/login");
 }
