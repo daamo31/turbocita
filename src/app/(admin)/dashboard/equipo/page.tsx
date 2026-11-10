@@ -41,8 +41,8 @@ export default async function TeamPage() {
             {n >= max && max < 50 && <Link href="/dashboard/plan" className="text-primary underline">Mejora tu plan para añadir más.</Link>}
           </p>
           <p className="text-center text-sm text-muted-foreground">
-            Es el máximo de citas simultáneas: cada profesional atiende una cita a la vez. Con {n}, a cualquier hora (no solo a las 11:00)
-            puede haber hasta {n} {n === 1 ? "cita" : "citas"} al mismo tiempo. Si hoy hay menos gente, ajusta el número.
+            Capacidad del equipo: cada profesional atiende una cita a la vez. Con {n} {n === 1 ? "profesional" : "profesionales"}, pueden haber
+            hasta {n} {n === 1 ? "cita" : "citas"} en paralelo. Aumenta el equipo para atender más clientes simultáneamente.
           </p>
         </CardContent>
       </Card>
