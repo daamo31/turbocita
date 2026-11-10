@@ -30,6 +30,16 @@ export const PATTERNS = {
   combs: "Peines",
   razors: "Navajas",
   salon: "Peluquería",
+  geo: "Geométrico",
+  mesh: "Malla",
+  aurora: "Aurora",
+  hexagons: "Hexágonos",
+  circuit: "Circuito",
+  marble: "Mármol",
+  gradient_waves: "Olas degradadas",
+  bokeh: "Bokeh",
+  noise: "Ruido",
+  organic: "Orgánico",
 } as const;
 export type PatternKey = keyof typeof PATTERNS;
 
@@ -87,6 +97,46 @@ const TILES: Record<PatternKey, { size: number; svg: (c: string) => string }> = 
   confetti: {
     size: 130,
     svg: (c) => `<g fill='${c}'><rect x='20' y='20' width='10' height='4' rx='1' transform='rotate(30 25 22)'/><rect x='90' y='30' width='4' height='10' rx='1' transform='rotate(-25 92 35)'/><rect x='60' y='85' width='10' height='4' rx='1' transform='rotate(-40 65 87)'/><circle cx='105' cy='100' r='3'/><circle cx='30' cy='95' r='2.5'/><circle cx='65' cy='25' r='2'/></g>`,
+  },
+  geo: {
+    size: 100,
+    svg: (c) => `<g fill='none' stroke='${c}' stroke-width='1.5'><polygon points='50,10 90,30 70,70 30,70 10,30'/><circle cx='50' cy='50' r='20'/></g>`,
+  },
+  mesh: {
+    size: 80,
+    svg: (c) => `<g fill='none' stroke='${c}' stroke-width='0.8'><polyline points='0,0 40,20 80,0'/><polyline points='0,40 40,60 80,40'/><polyline points='0,80 40,100 80,80'/><line x1='0' y1='0' x2='0' y2='80'/><line x1='40' y1='0' x2='40' y2='100'/><line x1='80' y1='0' x2='80' y2='80'/></g>`,
+  },
+  aurora: {
+    size: 120,
+    svg: (c) => `<defs><filter id='blur'><feGaussianBlur in='SourceGraphic' stdDeviation='2'/></filter></defs><g fill='${c}' opacity='0.6' filter='url(#blur)'><ellipse cx='30' cy='40' rx='25' ry='35' transform='rotate(-20 30 40)'/><ellipse cx='90' cy='50' rx='30' ry='40' transform='rotate(30 90 50)'/></g>`,
+  },
+  hexagons: {
+    size: 104,
+    svg: (c) => `<g fill='none' stroke='${c}' stroke-width='1.5'><polygon points='52,10 80,26 80,58 52,74 24,58 24,26'/><polygon points='52,50 72,60 72,80 52,90 32,80 32,60'/></g>`,
+  },
+  circuit: {
+    size: 100,
+    svg: (c) => `<g fill='none' stroke='${c}' stroke-width='1.2'><circle cx='20' cy='20' r='3' fill='${c}'/><line x1='23' y1='20' x2='40' y2='20'/><line x1='40' y1='20' x2='40' y2='80'/><circle cx='40' cy='80' r='3' fill='${c}'/><circle cx='80' cy='50' r='3' fill='${c}'/><line x1='77' y1='50' x2='60' y2='50'/><line x1='60' y1='50' x2='60' y2='20'/><line x1='60' y1='20' x2='45' y2='20'/></g>`,
+  },
+  marble: {
+    size: 120,
+    svg: (c) => `<defs><filter id='marble'><feTurbulence type='fractalNoise' baseFrequency='0.02' numOctaves='5' result='noise' seed='2'/><feDisplacementMap in='SourceGraphic' in2='noise' scale='20'/></filter></defs><rect width='120' height='120' fill='${c}' opacity='0.3' filter='url(#marble)'/>`,
+  },
+  gradient_waves: {
+    size: 100,
+    svg: (c) => `<g stroke='${c}' stroke-width='2' fill='none'><path d='M 0 30 Q 25 10, 50 30 T 100 30'/><path d='M 0 50 Q 25 30, 50 50 T 100 50'/><path d='M 0 70 Q 25 50, 50 70 T 100 70'/></g>`,
+  },
+  bokeh: {
+    size: 140,
+    svg: (c) => `<g fill='${c}' opacity='0.4'><circle cx='30' cy='40' r='15'/><circle cx='100' cy='70' r='10'/><circle cx='110' cy='30' r='20'/><circle cx='50' cy='110' r='12'/></g>`,
+  },
+  noise: {
+    size: 64,
+    svg: (c) => `<g fill='${c}' opacity='0.15'><rect x='5' y='5' width='4' height='4'/><rect x='18' y='12' width='3' height='3'/><rect x='35' y='8' width='5' height='5'/><rect x='50' y='25' width='4' height='4'/><rect x='10' y='40' width='3' height='3'/><rect x='55' y='45' width='4' height='4'/></g>`,
+  },
+  organic: {
+    size: 140,
+    svg: (c) => `<g fill='none' stroke='${c}' stroke-width='1.8'><path d='M 20 50 Q 40 30, 60 50 T 100 50'/><path d='M 30 70 Q 50 85, 70 70 T 110 70'/><circle cx='40' cy='30' r='8' fill='none' stroke='${c}' stroke-width='1'/></g>`,
   },
 };
 
@@ -150,18 +200,58 @@ export const THEMES = {
   },
   neon: {
     label: "Neón", bg: "#09090b", fg: "#fafafa", card: "#131316", muted: "#1c1c21", border: "#2e2e36", primary: "#22d3ee", radius: "0.75rem",
-    pattern: "grid",
+    pattern: "circuit",
     backdrop: "radial-gradient(700px 400px at 20% -10%, #22d3ee33 0%, transparent 60%), radial-gradient(700px 400px at 90% 0%, #e879f933 0%, transparent 60%)", card_style: "glass", dark: true,
   },
   menta: {
     label: "Menta", bg: "#f2fbf9", fg: "#0f2b27", card: "#ffffff", muted: "#d9f3ee", border: "#b7e6dd", primary: "#0d9488", radius: "1.5rem",
-    pattern: "bubbles",
+    pattern: "organic",
     backdrop: "radial-gradient(800px 400px at 50% -15%, #99f6e4 0%, transparent 65%)", card_style: "elevated",
   },
   cereza: {
     label: "Cereza", bg: "#fff5f5", fg: "#3b1114", card: "#ffffff", muted: "#fde3e3", border: "#f8c4c4", primary: "#dc2626", radius: "0.5rem",
-    pattern: "confetti",
+    pattern: "bokeh",
     backdrop: "linear-gradient(180deg, #fecaca 0%, transparent 340px)", card_style: "elevated",
+  },
+  aurora: {
+    label: "Aurora boreal", bg: "#0d1b2a", fg: "#e3f2fd", card: "#162a47", muted: "#1e3a5f", border: "#2c5aa0", primary: "#00d4ff", radius: "0.75rem",
+    pattern: "aurora",
+    backdrop: "linear-gradient(135deg, #00d4ff22 0%, #22d3ee11 50%, #00d4ff22 100%)", card_style: "glass", dark: true,
+  },
+  tierra: {
+    label: "Tierra", bg: "#f5f3f0", fg: "#3e2723", card: "#fffaf9", muted: "#efebe9", border: "#d7ccc8", primary: "#6d4c41", radius: "0.5rem",
+    pattern: "mesh",
+    backdrop: "linear-gradient(180deg, #d7ccc8 0%, transparent 300px)", card_style: "outline",
+  },
+  profundo: {
+    label: "Profundo azul", bg: "#0f1823", fg: "#e0e8f2", card: "#1a2a42", muted: "#283d5e", border: "#3a5a8a", primary: "#4a9eff", radius: "1rem",
+    pattern: "gradient_waves",
+    backdrop: "linear-gradient(135deg, #4a9eff22 0%, #2563eb11 50%, #1e40af22 100%)", card_style: "glass", dark: true,
+  },
+  dorado: {
+    label: "Dorado premium", bg: "#fefaf0", fg: "#5a3a1a", card: "#fffcf7", muted: "#f0e6d2", border: "#d4b896", primary: "#d4a574", radius: "1rem",
+    pattern: "hexagons",
+    backdrop: "radial-gradient(900px 450px at 50% -20%, #f5deb3 0%, transparent 70%)", card_style: "elevated",
+  },
+  minimalista: {
+    label: "Minimalista", bg: "#ffffff", fg: "#1f2937", card: "#ffffff", muted: "#f3f4f6", border: "#d1d5db", primary: "#6b7280", radius: "0.25rem",
+    pattern: "grid",
+    backdrop: "linear-gradient(180deg, #f3f4f6 0%, transparent 200px)", card_style: "flat",
+  },
+  acuarela: {
+    label: "Acuarela", bg: "#faf9f6", fg: "#4a3728", card: "#fffbf5", muted: "#f5ede3", border: "#e8d9c9", primary: "#b8860b", radius: "1.25rem",
+    pattern: "organic",
+    backdrop: "radial-gradient(800px 400px at 30% -10%, #ffcc99 0%, transparent 60%), radial-gradient(600px 400px at 80% 20%, #ff99cc 0%, transparent 60%)", card_style: "glass",
+  },
+  moderno: {
+    label: "Moderno tech", bg: "#0f172a", fg: "#f1f5f9", card: "#1e293b", muted: "#334155", border: "#475569", primary: "#0ea5e9", radius: "0.5rem",
+    pattern: "geo",
+    backdrop: "radial-gradient(800px 400px at 80% -10%, #0ea5e944 0%, transparent 65%), radial-gradient(600px 400px at 10% 30%, #06b6d444 0%, transparent 60%)", card_style: "outline", dark: true,
+  },
+  sunset: {
+    label: "Puesta de sol", bg: "#fff9e6", fg: "#4a2c1a", card: "#fffdf5", muted: "#ffeaa7", border: "#ffcc99", primary: "#ff6b35", radius: "1rem",
+    pattern: "bokeh",
+    backdrop: "linear-gradient(180deg, #ff6b35 0%, #ffa500 30%, #ffeb3b 70%, transparent 100%)", card_style: "glass",
   },
 } satisfies Record<string, Preset>;
 

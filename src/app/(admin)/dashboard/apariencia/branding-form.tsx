@@ -47,15 +47,16 @@ export function BrandingForm({ initial }: { initial: Initial }) {
       <div className="space-y-6">
         <div className="space-y-2">
           <Label>Plantilla de diseño</Label>
+          <p className="text-xs text-muted-foreground">Elige cómo se presentará tu página de reservas.</p>
           <div className="grid gap-2 sm:grid-cols-3">
             {(Object.keys(LAYOUTS) as LayoutKey[]).map((k) => (
               <button
                 key={k} type="button" onClick={() => setLayout(k)}
-                className={cn("rounded-lg border p-3 text-left text-xs transition hover:bg-muted", k === layout && "ring-2 ring-primary")}
+                className={cn("rounded-lg border p-3 text-left text-xs transition hover:shadow-md hover:scale-105 group", k === layout && "ring-2 ring-primary shadow-lg")}
               >
                 <LayoutThumb kind={k} />
-                <div className="mt-2 text-sm font-medium">{LAYOUTS[k].label}</div>
-                <div className="text-muted-foreground">{LAYOUTS[k].hint}</div>
+                <div className="mt-2 text-sm font-medium group-hover:text-primary">{LAYOUTS[k].label}</div>
+                <div className="text-muted-foreground text-xs">{LAYOUTS[k].hint}</div>
               </button>
             ))}
           </div>
@@ -63,17 +64,18 @@ export function BrandingForm({ initial }: { initial: Initial }) {
 
         <div className="space-y-2">
           <Label>Estilo y colores</Label>
+          <p className="text-xs text-muted-foreground">{Object.keys(THEMES).length} temas profesionales listos para usar.</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
             {(Object.keys(THEMES) as ThemeKey[]).map((k) => (
               <button
                 key={k} type="button" onClick={() => { setTheme(k); if (!useBrand) setColor(THEMES[k].primary); }}
-                className={cn("overflow-hidden rounded-lg border text-left text-xs transition hover:scale-[1.02]", k === theme && "ring-2 ring-primary")}
+                className={cn("overflow-hidden rounded-lg border text-left text-xs transition hover:scale-105 hover:shadow-md group", k === theme && "ring-2 ring-primary shadow-lg")}
               >
-                <div className="flex h-12" style={{ background: THEMES[k].bg, backgroundImage: THEMES[k].backdrop }}>
+                <div className="flex h-14" style={{ background: THEMES[k].bg, backgroundImage: THEMES[k].backdrop }}>
                   <span className="m-2 flex-1 rounded" style={{ background: THEMES[k].card, border: `1px solid ${THEMES[k].border}` }} />
-                  <span className="m-2 w-4 rounded-full" style={{ background: THEMES[k].primary }} />
+                  <span className="m-2 w-5 rounded-full" style={{ background: THEMES[k].primary }} />
                 </div>
-                <div className="p-2">{THEMES[k].label}</div>
+                <div className="p-2 bg-background group-hover:bg-muted text-center font-medium">{THEMES[k].label}</div>
               </button>
             ))}
           </div>
@@ -81,42 +83,45 @@ export function BrandingForm({ initial }: { initial: Initial }) {
 
         <div className="space-y-2">
           <Label>Color de marca</Label>
+          <p className="text-xs text-muted-foreground">Personaliza con tu color corporativo.</p>
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button" onClick={() => setUseBrand(false)} title="El de la plantilla"
-              className={cn("h-8 rounded-full border px-3 text-xs", !useBrand && "ring-2 ring-primary")}
+              className={cn("h-10 rounded-full border px-4 text-xs font-medium transition hover:shadow-sm", !useBrand && "ring-2 ring-primary bg-primary text-primary-foreground")}
             >
               Plantilla
             </button>
             {BRAND_COLORS.map((c) => (
               <button
                 key={c} type="button" aria-label={c} onClick={() => { setUseBrand(true); setColor(c); }}
-                className={cn("size-8 rounded-full border", useBrand && color.toLowerCase() === c && "ring-2 ring-primary ring-offset-2")}
-                style={{ background: c }}
+                className={cn("size-10 rounded-full border-2 transition hover:scale-110", useBrand && color.toLowerCase() === c && "ring-2 ring-primary ring-offset-2")}
+                style={{ background: c, borderColor: c }}
               />
             ))}
-            <label className="flex items-center gap-1 text-xs text-muted-foreground">
-              Otro
-              <input type="color" value={color} onChange={(e) => { setUseBrand(true); setColor(e.target.value); }} className="h-8 w-10 cursor-pointer" />
+            <label className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground cursor-pointer transition">
+              <input type="color" value={color} onChange={(e) => { setUseBrand(true); setColor(e.target.value); }} className="h-10 w-12 cursor-pointer rounded border" />
+              Personalizado
             </label>
           </div>
         </div>
 
         <div className="space-y-2">
           <Label>Decoración de fondo</Label>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+          <p className="text-xs text-muted-foreground">Elige un patrón que complemente tu diseño. {Object.keys(PATTERNS).length} opciones disponibles.</p>
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-8">
             {(["auto", "none", ...Object.keys(PATTERNS)] as (PatternKey | "auto" | "none")[]).map((k) => {
               const shown = k === "auto" ? resolvePattern("auto", theme) : k === "none" ? null : k;
               return (
                 <button
                   key={k} type="button" onClick={() => setPattern(k)}
-                  className={cn("overflow-hidden rounded-lg border text-left text-xs transition hover:bg-muted", k === pattern && "ring-2 ring-primary")}
+                  className={cn("group relative overflow-hidden rounded-lg border text-left text-xs transition hover:shadow-md hover:scale-105", k === pattern && "ring-2 ring-primary shadow-lg")}
+                  title={k === "auto" ? "Según plantilla" : k === "none" ? "Sin decoración" : PATTERNS[k]}
                 >
                   <div
-                    className="h-10 bg-muted"
-                    style={shown ? { backgroundImage: patternTile(shown, brand ?? THEMES[theme].primary).url, backgroundSize: "40px", opacity: 0.8 } : undefined}
+                    className="h-16 bg-muted"
+                    style={shown ? { backgroundImage: patternTile(shown, brand ?? THEMES[theme].primary).url, backgroundSize: "40px", opacity: 0.9 } : undefined}
                   />
-                  <div className="p-1.5">{k === "auto" ? "Según plantilla" : k === "none" ? "Ninguna" : PATTERNS[k]}</div>
+                  <div className="p-2 text-center bg-background group-hover:bg-muted">{k === "auto" ? "Auto" : k === "none" ? "Ninguna" : PATTERNS[k].length > 10 ? PATTERNS[k].slice(0, 8) + '…' : PATTERNS[k]}</div>
                 </button>
               );
             })}
@@ -125,9 +130,10 @@ export function BrandingForm({ initial }: { initial: Initial }) {
 
         <div className="space-y-2">
           <Label>Estilo de tarjetas</Label>
+          <p className="text-xs text-muted-foreground">Elige cómo se ven los elementos principales.</p>
           <div className="flex flex-wrap gap-2">
             {(["auto", ...Object.keys(CARD_STYLES)] as (CardStyleKey | "auto")[]).map((k) => (
-              <Button key={k} type="button" size="sm" variant={k === cardStyle ? "default" : "outline"} onClick={() => setCardStyle(k)}>
+              <Button key={k} type="button" size="sm" variant={k === cardStyle ? "default" : "outline"} onClick={() => setCardStyle(k)} className="transition hover:scale-105">
                 {k === "auto" ? "Según plantilla" : CARD_STYLES[k]}
               </Button>
             ))}
@@ -146,8 +152,11 @@ export function BrandingForm({ initial }: { initial: Initial }) {
       </div>
 
       <div className="space-y-2 xl:sticky xl:top-4 xl:self-start">
-        <Label>Vista previa</Label>
-        <div style={themeStyle(theme, brand, cardStyle, pattern)} className="bk-backdrop relative isolate max-h-[640px] overflow-y-auto rounded-xl border">
+        <div className="flex items-center justify-between">
+          <Label className="text-base">Vista previa en vivo</Label>
+          <span className="text-xs text-primary font-semibold animate-pulse">● En directo</span>
+        </div>
+        <div style={themeStyle(theme, brand, cardStyle, pattern)} className="bk-backdrop relative isolate max-h-[640px] overflow-y-auto rounded-2xl border-2 shadow-xl">
           <div aria-hidden className="bk-pattern sticky top-0 -z-10 -mb-[640px] h-[640px]" />
           <div className={cn(layout !== "hero" && "p-5")}>
             <BookingShell
@@ -175,7 +184,7 @@ export function BrandingForm({ initial }: { initial: Initial }) {
             </BookingShell>
           </div>
         </div>
-        {layout === "split" && <p className="text-xs text-muted-foreground">La plantilla Dividida muestra la info a un lado en pantallas anchas; aquí se previsualiza en modo compacto.</p>}
+        {layout === "split" && <p className="text-xs text-muted-foreground text-center">💡 Plantilla Dividida: info a un lado en pantallas anchas.</p>}
       </div>
     </ActionForm>
   );
