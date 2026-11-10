@@ -13,7 +13,7 @@ export default async function RegisterPage({ searchParams }: PageProps<"/registr
       <Card className="w-full">
         <CardHeader>
           <CardTitle>Crea tu negocio</CardTitle>
-          <CardDescription>Gratis para empezar. Tus clientes podrán reservar en minutos.</CardDescription>
+          <CardDescription>Prueba Pro gratis durante 15 días desde el registro. Después necesitarás un plan de pago para acceder al panel; tu página seguirá aceptando reservas.</CardDescription>
         </CardHeader>
         <CardContent>
           <SignupForm rootDomain={process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? null} />

@@ -12,26 +12,28 @@ async function syncSubscription(sub: Stripe.Subscription) {
   const admin = createAdminClient();
   const found = planFromLookupKey(sub.items.data[0]?.price.lookup_key);
   if (!found) {
-    console.error("stripe webhook: precio sin lookup_key de TurboCita", sub.id);
-    return;
+    throw new Error(`stripe webhook: precio sin lookup_key de TurboCita ${sub.id}`);
   }
   const status = mapStatus(sub.status);
-  const { data: biz } = await admin.from("businesses")
+  const { data: biz, error: lookupError } = await admin.from("businesses")
     .select("id, stripe_subscription_id, plan_status").eq("stripe_customer_id", customerId(sub.customer)).maybeSingle();
+  if (lookupError) throw lookupError;
   if (!biz) {
-    console.error("stripe webhook: cliente desconocido", customerId(sub.customer));
-    return;
+    throw new Error(`stripe webhook: cliente desconocido ${customerId(sub.customer)}`);
   }
   // Una suscripción antigua cancelada no debe pisar a la nueva que ya está activa
   if (status === "canceled" && biz.stripe_subscription_id && biz.stripe_subscription_id !== sub.id && biz.plan_status !== "canceled") return;
 
-  await admin.from("businesses").update({
+  const { error } = await admin.from("businesses").update({
     plan: found.plan,
     billing_interval: found.interval,
     plan_status: status,
     stripe_subscription_id: sub.id,
     trial_ends_at: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
+    ...(["active", "trialing", "past_due", "unpaid"].includes(sub.status)
+      ? { app_trial_ends_at: new Date().toISOString() } : {}),
   }).eq("id", biz.id);
+  if (error) throw error;
 }
 
 export async function POST(req: Request) {
@@ -59,9 +61,11 @@ export async function POST(req: Request) {
       }
       case "customer.subscription.created":
       case "customer.subscription.updated":
-      case "customer.subscription.deleted":
-        await syncSubscription(event.data.object as Stripe.Subscription);
+      case "customer.subscription.deleted": {
+        const sub = event.data.object as Stripe.Subscription;
+        await syncSubscription(await stripe.subscriptions.retrieve(sub.id));
         break;
+      }
       case "invoice.payment_failed":
       case "invoice.paid": {
         // Re-lee la suscripción para reflejar past_due / active

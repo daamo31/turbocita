@@ -14,11 +14,13 @@ type Props = {
   interval: "month" | "year";
   subscribed: boolean; // hay suscripción de Stripe viva
   status: string;
+  inTrial: boolean;
+  hasAccess: boolean;
   enabled: boolean; // Stripe configurado
   isOwner: boolean;
 };
 
-export function PlanPicker({ plan, interval: current, subscribed, status, enabled, isOwner }: Props) {
+export function PlanPicker({ plan, interval: current, subscribed, status, enabled, isOwner, inTrial, hasAccess }: Props) {
   const [interval, setInterval] = useState<"month" | "year">(current);
 
   return (
@@ -35,7 +37,7 @@ export function PlanPicker({ plan, interval: current, subscribed, status, enable
       <div className="grid gap-4 lg:grid-cols-3">
         {PLAN_ORDER.map((id) => {
           const p = PLANS[id];
-          const isCurrent = id === plan && status !== "canceled";
+          const isCurrent = subscribed && hasAccess && !inTrial && id === plan && status !== "canceled";
           const price = interval === "year" ? p.yearlyMonthly : p.monthly;
           return (
             <Card key={id} className={cn("h-full", isCurrent && "ring-2 ring-primary")}>

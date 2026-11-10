@@ -1,20 +1,24 @@
-import { getContext } from "@/lib/auth";
+import { getBillingContext } from "@/lib/auth";
 import { PLANS } from "@/lib/plans";
 import { stripeConfigured } from "@/lib/stripe";
 import { PlanPicker } from "./plan-picker";
 
 const STATUS_NOTE: Record<string, string> = {
   trialing: "Periodo de prueba activo.",
-  past_due: "Hay un pago pendiente: actualiza tu método de pago para no perder las funciones de tu plan.",
-  canceled: "Suscripción cancelada: tu cuenta funciona con las limitaciones del plan Starter.",
+  past_due: "Hay un pago pendiente: actualiza tu método de pago para recuperar el acceso.",
+  canceled: "La suscripción ha finalizado.",
 };
 
 export default async function PlanPage({ searchParams }: { searchParams: Promise<{ error?: string; checkout?: string }> }) {
   const sp = await searchParams;
-  const { supabase, business, plan, role } = await getContext();
-  const { data: biz } = await supabase.from("businesses")
+  const { supabase, business, plan, role, hasAccess, inTrial } = await getBillingContext();
+  const { data: biz, error: billingError } = await supabase.from("businesses")
     .select("billing_interval, plan_status, stripe_subscription_id, trial_ends_at").eq("id", business.id).single();
-  const status = biz?.plan_status ?? "active";
+  if (billingError || !biz) {
+    console.error("No se pudo consultar la suscripción", billingError);
+    throw new Error("No se pudo consultar la suscripción.");
+  }
+  const status = biz.plan_status;
   const enabled = stripeConfigured();
   const contact = process.env.NEXT_PUBLIC_SALES_CONTACT;
   const error = typeof sp.error === "string" ? sp.error : null;
@@ -28,16 +32,25 @@ export default async function PlanPage({ searchParams }: { searchParams: Promise
         </p>
       )}
       {error && <p role="alert" className="rounded-lg bg-red-100 p-3 text-sm text-red-900">{error}</p>}
-      <p className="text-sm text-muted-foreground">
-        Plan actual: <b>{PLANS[plan].name}</b>
-        {biz?.trial_ends_at && status === "trialing" && <> (prueba hasta el {new Date(biz.trial_ends_at).toLocaleDateString("es-ES")})</>}.
-        {STATUS_NOTE[status] && <> {STATUS_NOTE[status]}</>}
-      </p>
+      {inTrial ? (
+        <p className="text-sm text-muted-foreground">Estás disfrutando de una prueba de Pro. Al contratar un plan, el cobro comienza inmediatamente y termina la prueba.</p>
+      ) : hasAccess ? (
+        <p className="text-sm text-muted-foreground">
+          Plan actual: <b>{PLANS[plan].name}</b>.
+          {STATUS_NOTE[status] && <> {STATUS_NOTE[status]}</>}
+        </p>
+      ) : (
+        <p role="alert" className="rounded-lg bg-amber-100 p-3 text-sm text-amber-950">
+          {STATUS_NOTE[status] ?? "Tu periodo de prueba ha terminado."} {role === "owner" ? "Contrata un plan o actualiza el método de pago para recuperar el acceso al panel." : "El propietario debe contratar un plan o actualizar el método de pago."} La página de reservas sigue disponible.
+        </p>
+      )}
       <PlanPicker
         plan={plan}
         interval={biz?.billing_interval === "year" ? "year" : "month"}
         subscribed={Boolean(biz?.stripe_subscription_id) && status !== "canceled"}
         status={status}
+        inTrial={inTrial}
+        hasAccess={hasAccess}
         enabled={enabled}
         isOwner={role === "owner"}
       />

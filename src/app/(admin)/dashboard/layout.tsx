@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { ExternalLink, LogOut } from "lucide-react";
-import { getContext } from "@/lib/auth";
+import { getBillingContext } from "@/lib/auth";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Tip } from "@/components/ui/tooltip";
 import { AdminNav } from "@/components/admin-nav";
 import { signOut } from "@/app/(auth)/login/actions";
+import { TrialCountdown } from "@/components/trial-countdown";
 
 export default async function AdminLayout({ children }: LayoutProps<"/dashboard">) {
-  const { business } = await getContext();
+  const { business, hasAccess, inTrial, now } = await getBillingContext();
   return (
     <div className="admin-shell min-h-screen overflow-x-clip">
       <header className="sticky top-0 z-20 border-b bg-background/80 shadow-sm backdrop-blur-md">
@@ -43,8 +44,11 @@ export default async function AdminLayout({ children }: LayoutProps<"/dashboard"
 
       {/* pb-24: deja sitio a la barra inferior fija en móvil */}
       <div className="mx-auto flex max-w-6xl gap-8 px-4 py-4 pb-24 md:py-6 md:pb-8">
-        <AdminNav />
-        <main className="min-w-0 flex-1">{children}</main>
+        {hasAccess && <AdminNav />}
+        <main className="min-w-0 flex-1 space-y-4">
+          {inTrial && <TrialCountdown endsAt={business.app_trial_ends_at} initialNow={now} />}
+          {children}
+        </main>
       </div>
     </div>
   );

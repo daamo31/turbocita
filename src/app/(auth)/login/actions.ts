@@ -46,7 +46,7 @@ export async function signUp(formData: FormData) {
   });
   if (error) failSignup(error.message);
   // Sin sesión = confirmación por email pendiente; el negocio se crea en el primer acceso
-  if (!data.session) redirect("/login?info=" + encodeURIComponent("Cuenta creada. Revisa tu email para confirmarla y luego inicia sesión."));
+  if (!data.session) redirect("/auth/callback?next=/registro&info=" + encodeURIComponent("Cuenta creada. Revisa tu email para confirmarla."));
   redirect("/dashboard/agenda");
 }
 

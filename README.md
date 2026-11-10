@@ -33,12 +33,17 @@ npm run dev                  # http://localhost:3000
 | `NOTIFY_ALLOWED_PREFIXES` | No | Prefijos telefónicos permitidos para notificaciones (por defecto `+34`) |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | No | CAPTCHA Cloudflare Turnstile en reservas. Sin ellas, desactivado |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | No | Suscripciones (Stripe). Sin ellas, `/dashboard/plan` solo muestra los planes. Precios: `npm run stripe:setup`. Webhook: `POST /api/stripe/webhook` con eventos `checkout.session.completed`, `customer.subscription.*` e `invoice.paid` / `invoice.payment_failed` |
-| `STRIPE_TRIAL_DAYS` | No | Días de prueba gratuita en el Checkout |
 | `NEXT_PUBLIC_SALES_CONTACT` | No | Email o enlace de contacto mostrado si Stripe no está configurado |
+
+Las nuevas suscripciones usan Stripe Checkout con **Managed Payments desactivado**, aunque esté activado por defecto en la cuenta de Stripe. El negocio titular de TurboCita es responsable de sus obligaciones fiscales; este ajuste no configura el cálculo ni el cobro automático de impuestos. No modifica suscripciones existentes.
+
+Cada cuenta nueva recibe 15 días de prueba de las funciones Pro desde su registro. Los negocios existentes sin suscripción vigente reciben 15 días desde la aplicación de la migración `0019`. El panel muestra los días restantes; al contratar se cobra inmediatamente y finaliza la prueba. Al vencer la prueba, o si una suscripción termina o queda impagada, solo se permite acceder a la página de planes y cerrar sesión. La página pública sigue aceptando reservas.
+
+La activación del plan depende del webhook de Stripe. Configura y verifica `STRIPE_WEBHOOK_SECRET` y los eventos indicados antes de activar la migración; usa claves de producción para cobros reales. No se aplica una segunda prueba de Stripe en Checkout. Las pruebas o descuentos configurados directamente en Stripe se deben revisar por separado.
 
 ## Base de datos y migraciones
 
-Las migraciones están en [supabase/migrations](supabase/migrations) (`0001` a `0015`). Usan la Supabase CLI, ya incluida como dependencia de desarrollo.
+Las migraciones están en [supabase/migrations](supabase/migrations) (`0001` a `0019`). Usan la Supabase CLI, ya incluida como dependencia de desarrollo.
 
 ```bash
 # Con sesión iniciada (npx supabase login) y proyecto enlazado
